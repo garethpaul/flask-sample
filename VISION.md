@@ -38,7 +38,6 @@ Canonical security policy and reporting:
 
 - [`SECURITY.md`](SECURITY.md)
 
-
 Debug mode is for local development only. Future deployment notes must disable
 debug behavior and avoid exposing Werkzeug debugger access.
 
