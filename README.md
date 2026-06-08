@@ -57,6 +57,14 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include app.py.
 
+## Development Debug Mode
+
+Debug mode is disabled by default. For local development only, set:
+
+```bash
+FLASK_SAMPLE_DEBUG=1
+```
+
 ## Maintenance Notes
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.

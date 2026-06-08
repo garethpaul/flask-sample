@@ -1,10 +1,20 @@
+import os
+
 from flask import Flask
 from flask import render_template
 from flask import request
-import os
+
+DEBUG_ENV_VAR = 'FLASK_SAMPLE_DEBUG'
+DEBUG_TRUE_VALUES = {'1', 'true', 'yes', 'on'}
+
+
+def debug_enabled():
+    return os.environ.get(DEBUG_ENV_VAR, '').lower() in DEBUG_TRUE_VALUES
+
+
 app = Flask(__name__)
 app.static_dir = os.getcwd() + '/static'
-app.debug = True
+app.debug = debug_enabled()
 
 @app.route("/")
 def hello():
