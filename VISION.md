@@ -1,5 +1,8 @@
 ## Flask Sample Vision
 
+This document explains the current state and direction of the project.
+Project overview and developer docs: [`README.md`](README.md)
+
 Flask Sample is a minimal Flask application that serves a `hello.html` template
 from the root route.
 
