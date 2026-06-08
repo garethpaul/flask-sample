@@ -13,8 +13,11 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 
 - `README.md` - project overview and local usage notes
 - `app.py`
+- `requirements.txt` - Flask dependency compatibility range
+- `Makefile` and `scripts/check-baseline.sh` - local verification commands
 - `SECURITY.md` - security reporting and disclosure guidance
 - `templates` - source or example code
+- `tests` - root-route test coverage
 - `VISION.md` - project direction and maintenance guardrails
 
 Additional scan context:
@@ -29,38 +32,57 @@ Additional scan context:
 ### Prerequisites
 
 - Git
+- Python 3
 
 ### Setup
 
 ```bash
 git clone https://github.com/garethpaul/flask-sample.git
 cd flask-sample
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
 The setup commands above are derived from repository files. Legacy mobile, Python, or JavaScript samples may require older SDKs or package versions than a modern workstation uses by default.
 
 ## Running or Using the Project
 
-- Run `python app.py` after installing Python dependencies.
+- Run `python app.py` for local development. The app binds to `127.0.0.1:5000`
+  by default.
+- Set `FLASK_DEBUG=1` only for local debugging.
+- Set `FLASK_RUN_HOST` or `PORT` locally when you need a different bind host or
+  port.
 
 ## Testing and Verification
 
-- No dedicated automated test command was identified from the checked-in files. Verify changes by running the relevant build or manually exercising the sample.
+Run the baseline:
+
+```bash
+make check
+```
+
+The baseline compiles the app, runs the route tests, and verifies debug mode is
+opt-in rather than hardcoded.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
 ## Configuration and Secrets
 
-- No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
+- No required secret or credential file is needed. Keep `.env` files local if
+  future integrations add configuration.
 
 ## Security and Privacy Notes
 
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include app.py.
+- Debug mode is local-only. Do not expose the Werkzeug debugger on a public
+  interface.
 
 ## Maintenance Notes
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
+- Run `make check` before pushing Flask route or configuration changes.
 
 ## Contributing
 

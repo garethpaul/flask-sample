@@ -1,21 +1,24 @@
-from flask import Flask
-from flask import render_template
-from flask import request
 import os
-app = Flask(__name__)
-app.static_dir = os.getcwd() + '/static'
-app.debug = True
+from flask import Flask, render_template
 
-@app.route("/")
+app = Flask(__name__)
+app.static_dir = os.path.join(os.getcwd(), "static")
+
+
+def debug_enabled(value=None):
+    raw_value = os.environ.get("FLASK_DEBUG", "") if value is None else value
+    return raw_value.lower() in ("1", "true", "yes", "on")
+
+
+app.debug = debug_enabled()
+
+
+@app.route("/", methods=["GET", "POST"])
 def hello():
-	if request.method == 'POST':
-	    #post = request.args.get('data', '')
-		return render_template('hello.html')
-	else:
-		#request.cookies.set('username', 'value')
-		#username = request.cookies.get('username')
-		#get = request.args.get('data', '')
-		return render_template('hello.html')
+    return render_template("hello.html")
+
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    host = os.environ.get("FLASK_RUN_HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "5000"))
+    app.run(host=host, port=port, debug=debug_enabled())

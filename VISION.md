@@ -21,11 +21,19 @@ Priority:
 - Avoid adding production claims while debug mode is enabled
 - Make dependencies and setup explicit
 
+Current baseline:
+
+- `scripts/check-baseline.sh` and `make check` compile the app and run root
+  route tests.
+- Debug mode is controlled by `FLASK_DEBUG` instead of being hardcoded.
+- Local execution binds to `127.0.0.1` unless the developer explicitly sets
+  `FLASK_RUN_HOST`.
+- Python environments, bytecode, and `.env` files are ignored.
+
 Next priorities:
 
-- Add README setup commands and dependency requirements
-- Turn debug configuration into an environment-controlled setting
-- Add a minimal test for the root route
+- Keep README setup commands and dependency requirements current
+- Add more route tests only when route behavior grows
 - Document how to run locally on port 5000
 
 Contribution rules:
