@@ -45,3 +45,6 @@ Do not add secrets or credentials to source code.
 - Secret keys or credentials in source
 - Framework-heavy rewrites that hide the basic Flask lesson
 - Route changes without a simple verification path
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
