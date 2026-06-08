@@ -39,7 +39,7 @@ debug behavior and avoid exposing Werkzeug debugger access.
 
 Do not add secrets or credentials to source code.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - Production deployment claims while debug mode is hardcoded
 - Secret keys or credentials in source
