@@ -1,5 +1,8 @@
 # flask-sample
 
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 ## Overview
 
 `garethpaul/flask-sample` is a static web project. Flask sample
@@ -68,4 +71,3 @@ Keep changes small and tied to the project that is already present in this repos
 Prior README summary:
 
 > flask-sample <!-- README-OVERVIEW-IMAGE --> flask-sample ============ Flask sample
-
