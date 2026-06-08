@@ -70,4 +70,4 @@ Keep changes small and tied to the project that is already present in this repos
 
 Prior README summary:
 
-> flask-sample <!-- README-OVERVIEW-IMAGE --> flask-sample ============ Flask sample
+> flask-sample flask-sample ============ Flask sample
