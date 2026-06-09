@@ -38,6 +38,8 @@ Current baseline:
   protection, and referrer policy.
 - Responses include a minimal Content-Security-Policy for same-origin assets
   and no frame ancestors.
+- Responses include a Permissions-Policy that disables unused camera,
+  microphone, and geolocation capabilities.
 - `make lint`, `make test`, and `make build` run the local baseline or unit
   tests while this sample has no narrower installed gates.
 - Python environments, bytecode, and `.env` files are ignored.
@@ -51,6 +53,8 @@ Next priorities:
 - Preserve the basic response header hook when adding routes
 - Keep frame embedding disabled unless a documented use case is added
 - Keep the CSP updated if templates begin loading external assets
+- Keep unused browser capabilities disabled unless the sample gains a feature
+  that needs them
 
 Contribution rules:
 

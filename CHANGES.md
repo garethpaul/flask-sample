@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Added a `Permissions-Policy` response header for unused browser capabilities
+  with unit and baseline coverage.
 - Added a minimal Content-Security-Policy response header with regression and
   baseline coverage, plus `make lint`/`make build` aliases.
 

@@ -9,6 +9,7 @@ HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-validation.md"
 HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-basic-security-headers.md"
 FRAME_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-clickjacking-header.md"
 CSP_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-content-security-policy-header.md"
+PERMISSIONS_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-permissions-policy-header.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -32,6 +33,7 @@ for path in \
   "tests/test_app.py" \
   "docs/plans/2026-06-09-content-security-policy-header.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
+  "docs/plans/2026-06-09-permissions-policy-header.md" \
   "docs/plans/2026-06-09-flask-host-validation.md" \
   "docs/plans/2026-06-09-basic-security-headers.md" \
   "docs/plans/2026-06-09-flask-port-validation.md" \
@@ -66,6 +68,8 @@ fi
 
 if ! grep -Fq "@app.after_request" "$ROOT_DIR/app.py" ||
   ! grep -Fq "Content-Security-Policy" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "Permissions-Policy" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "geolocation=(), microphone=(), camera=()" "$ROOT_DIR/app.py" ||
   ! grep -Fq "X-Content-Type-Options" "$ROOT_DIR/app.py" ||
   ! grep -Fq "X-Frame-Options" "$ROOT_DIR/app.py" ||
   ! grep -Fq "Referrer-Policy" "$ROOT_DIR/app.py" ||
@@ -130,6 +134,7 @@ if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   ! grep -Fq "Invalid \`PORT\` values fall back to \`5000\`" "$ROOT_DIR/README.md" ||
   ! grep -Fq "Blank \`FLASK_RUN_HOST\` values fall back to \`127.0.0.1\`" "$ROOT_DIR/README.md" ||
   ! grep -Fq "GET-only" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "Permissions-Policy" "$ROOT_DIR/README.md" ||
   ! grep -Fq "requirements.txt" "$ROOT_DIR/README.md"; then
   printf '%s\n' "README must document setup, debug posture, GET-only route behavior, PORT fallback, and verification." >&2
   exit 1
@@ -182,6 +187,11 @@ fi
 
 if ! grep -Fq "status: completed" "$CSP_HEADERS_PLAN"; then
   printf '%s\n' "Content-Security-Policy header plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$PERMISSIONS_HEADERS_PLAN"; then
+  printf '%s\n' "Permissions-Policy header plan must be marked completed." >&2
   exit 1
 fi
 

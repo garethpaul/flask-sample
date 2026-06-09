@@ -28,6 +28,10 @@ class FlaskSampleTests(unittest.TestCase):
             "no-referrer",
             response.headers.get("Referrer-Policy"),
         )
+        self.assertEqual(
+            "geolocation=(), microphone=(), camera=()",
+            response.headers.get("Permissions-Policy"),
+        )
 
     def test_root_get_sets_content_security_policy(self):
         response = self.client.get("/")
