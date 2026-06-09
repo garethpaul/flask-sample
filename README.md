@@ -69,7 +69,11 @@ The baseline compiles the app, runs the route tests, and verifies debug mode is
 opt-in rather than hardcoded. It also verifies the root route stays GET-only and
 startup port parsing falls back safely for invalid local environment values.
 Blank host values also fall back to localhost. Responses include basic security
-headers for content sniffing, clickjacking protection, and referrer policy.
+headers for content sniffing, clickjacking protection, referrer policy, and a
+minimal Content-Security-Policy.
+
+The `make lint`, `make test`, and `make build` aliases run the same local
+baseline or unit tests while this sample has no narrower installed gates.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -87,6 +91,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   in place when adding routes.
 - Keep `X-Frame-Options: DENY` in place unless a documented embedding use case
   is added.
+- Keep the minimal Content-Security-Policy in place when adding new templates,
+  routes, or external assets.
 
 ## Maintenance Notes
 
@@ -102,6 +108,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   guardrails.
 - See `docs/plans/2026-06-09-clickjacking-header.md` for the frame-embedding
   header guard.
+- See `docs/plans/2026-06-09-content-security-policy-header.md` for the
+  Content-Security-Policy header guard.
 - Run `make check` before pushing Flask route or configuration changes.
 
 ## Contributing

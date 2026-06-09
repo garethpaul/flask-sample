@@ -8,6 +8,7 @@ PORT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-port-validation.md"
 HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-validation.md"
 HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-basic-security-headers.md"
 FRAME_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-clickjacking-header.md"
+CSP_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-content-security-policy-header.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -29,6 +30,7 @@ for path in \
   "requirements.txt" \
   "templates/hello.html" \
   "tests/test_app.py" \
+  "docs/plans/2026-06-09-content-security-policy-header.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
   "docs/plans/2026-06-09-flask-host-validation.md" \
   "docs/plans/2026-06-09-basic-security-headers.md" \
@@ -63,11 +65,25 @@ if ! grep -Fq "test_root_post_is_not_allowed" "$ROOT_DIR/tests/test_app.py" ||
 fi
 
 if ! grep -Fq "@app.after_request" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "Content-Security-Policy" "$ROOT_DIR/app.py" ||
   ! grep -Fq "X-Content-Type-Options" "$ROOT_DIR/app.py" ||
   ! grep -Fq "X-Frame-Options" "$ROOT_DIR/app.py" ||
   ! grep -Fq "Referrer-Policy" "$ROOT_DIR/app.py" ||
   ! grep -Fq "test_root_get_sets_basic_security_headers" "$ROOT_DIR/tests/test_app.py"; then
   printf '%s\n' "Flask responses must keep basic security headers and test coverage." >&2
+  exit 1
+fi
+
+if ! grep -Fq "default-src 'self'; frame-ancestors 'none'" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "test_root_get_sets_content_security_policy" "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "Flask responses must keep Content-Security-Policy coverage." >&2
+  exit 1
+fi
+
+if ! grep -Fq "lint: check" "$ROOT_DIR/Makefile" ||
+  ! grep -Fq "test:" "$ROOT_DIR/Makefile" ||
+  ! grep -Fq "build: check" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile must expose lint, test, and build gates." >&2
   exit 1
 fi
 
@@ -161,6 +177,11 @@ fi
 
 if ! grep -Fq "status: completed" "$FRAME_HEADERS_PLAN"; then
   printf '%s\n' "Clickjacking header plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$CSP_HEADERS_PLAN"; then
+  printf '%s\n' "Content-Security-Policy header plan must be marked completed." >&2
   exit 1
 fi
 

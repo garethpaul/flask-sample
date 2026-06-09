@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-09
+
+- Added a minimal Content-Security-Policy response header with regression and
+  baseline coverage, plus `make lint`/`make build` aliases.
+
 ## 2026-06-08
 
 - Added basic security headers for Flask responses and unit/static baseline

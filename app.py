@@ -5,6 +5,7 @@ app = Flask(__name__)
 app.static_dir = os.path.join(os.getcwd(), "static")
 
 BASIC_SECURITY_HEADERS = {
+    "Content-Security-Policy": "default-src 'self'; frame-ancestors 'none'",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",

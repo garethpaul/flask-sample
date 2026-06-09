@@ -36,6 +36,10 @@ Current baseline:
 - Invalid `PORT` values fall back to 5000 rather than crashing local startup.
 - Responses include basic security headers for content sniffing, clickjacking
   protection, and referrer policy.
+- Responses include a minimal Content-Security-Policy for same-origin assets
+  and no frame ancestors.
+- `make lint`, `make test`, and `make build` run the local baseline or unit
+  tests while this sample has no narrower installed gates.
 - Python environments, bytecode, and `.env` files are ignored.
 
 Next priorities:
@@ -46,6 +50,7 @@ Next priorities:
 - Keep local host parsing documented as startup configuration evolves
 - Preserve the basic response header hook when adding routes
 - Keep frame embedding disabled unless a documented use case is added
+- Keep the CSP updated if templates begin loading external assets
 
 Contribution rules:
 

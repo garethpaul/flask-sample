@@ -29,6 +29,14 @@ class FlaskSampleTests(unittest.TestCase):
             response.headers.get("Referrer-Policy"),
         )
 
+    def test_root_get_sets_content_security_policy(self):
+        response = self.client.get("/")
+
+        self.assertEqual(
+            "default-src 'self'; frame-ancestors 'none'",
+            response.headers.get("Content-Security-Policy"),
+        )
+
     def test_root_post_is_not_allowed(self):
         response = self.client.post("/")
 
