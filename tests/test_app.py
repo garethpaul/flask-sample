@@ -13,6 +13,18 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn(b"Hello", response.data)
 
+    def test_root_get_sets_basic_security_headers(self):
+        response = self.client.get("/")
+
+        self.assertEqual(
+            "nosniff",
+            response.headers.get("X-Content-Type-Options"),
+        )
+        self.assertEqual(
+            "no-referrer",
+            response.headers.get("Referrer-Policy"),
+        )
+
     def test_root_post_is_not_allowed(self):
         response = self.client.post("/")
 

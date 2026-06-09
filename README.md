@@ -68,7 +68,8 @@ make check
 The baseline compiles the app, runs the route tests, and verifies debug mode is
 opt-in rather than hardcoded. It also verifies the root route stays GET-only and
 startup port parsing falls back safely for invalid local environment values.
-Blank host values also fall back to localhost.
+Blank host values also fall back to localhost. Responses include basic security
+headers for content sniffing and referrer policy.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -82,6 +83,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Review changes touching network requests, sockets, or service endpoints; examples from the scan include app.py.
 - Debug mode is local-only. Do not expose the Werkzeug debugger on a public
   interface.
+- Keep response headers such as `X-Content-Type-Options` and `Referrer-Policy`
+  in place when adding routes.
 
 ## Maintenance Notes
 
@@ -92,6 +95,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-09-flask-port-validation.md` for local port parsing
   guardrails.
 - See `docs/plans/2026-06-09-flask-host-validation.md` for local host parsing
+  guardrails.
+- See `docs/plans/2026-06-09-basic-security-headers.md` for response header
   guardrails.
 - Run `make check` before pushing Flask route or configuration changes.
 

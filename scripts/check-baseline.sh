@@ -6,6 +6,7 @@ PLAN="$ROOT_DIR/docs/plans/2026-06-08-flask-sample-debug-baseline.md"
 GET_ONLY_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-get-only-root.md"
 PORT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-port-validation.md"
 HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-validation.md"
+HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-basic-security-headers.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -28,6 +29,7 @@ for path in \
   "templates/hello.html" \
   "tests/test_app.py" \
   "docs/plans/2026-06-09-flask-host-validation.md" \
+  "docs/plans/2026-06-09-basic-security-headers.md" \
   "docs/plans/2026-06-09-flask-port-validation.md" \
   "docs/plans/2026-06-09-flask-get-only-root.md" \
   "docs/plans/2026-06-08-flask-sample-debug-baseline.md"; do
@@ -55,6 +57,14 @@ fi
 if ! grep -Fq "test_root_post_is_not_allowed" "$ROOT_DIR/tests/test_app.py" ||
   ! grep -Fq "405" "$ROOT_DIR/tests/test_app.py"; then
   printf '%s\n' "Route tests must assert unsupported POST requests are rejected." >&2
+  exit 1
+fi
+
+if ! grep -Fq "@app.after_request" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "X-Content-Type-Options" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "Referrer-Policy" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "test_root_get_sets_basic_security_headers" "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "Flask responses must keep basic security headers and test coverage." >&2
   exit 1
 fi
 
@@ -132,6 +142,11 @@ fi
 
 if ! grep -Fq "status: completed" "$HOST_PLAN"; then
   printf '%s\n' "Host validation plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$HEADERS_PLAN"; then
+  printf '%s\n' "Basic security headers plan must be marked completed." >&2
   exit 1
 fi
 

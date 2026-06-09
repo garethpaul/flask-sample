@@ -4,6 +4,11 @@ from flask import Flask, render_template
 app = Flask(__name__)
 app.static_dir = os.path.join(os.getcwd(), "static")
 
+BASIC_SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+}
+
 
 def debug_enabled(value=None):
     raw_value = os.environ.get("FLASK_DEBUG", "") if value is None else value
@@ -29,6 +34,13 @@ def host_name(value=None, default="127.0.0.1"):
 
 
 app.debug = debug_enabled()
+
+
+@app.after_request
+def set_basic_security_headers(response):
+    for header, value in BASIC_SECURITY_HEADERS.items():
+        response.headers.setdefault(header, value)
+    return response
 
 
 @app.route("/")
