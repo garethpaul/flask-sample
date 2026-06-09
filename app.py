@@ -22,6 +22,12 @@ def port_number(value=None, default=5000):
     return default
 
 
+def host_name(value=None, default="127.0.0.1"):
+    raw_value = os.environ.get("FLASK_RUN_HOST", default) if value is None else value
+    host = raw_value.strip()
+    return host or default
+
+
 app.debug = debug_enabled()
 
 
@@ -31,6 +37,6 @@ def hello():
 
 
 if __name__ == "__main__":
-    host = os.environ.get("FLASK_RUN_HOST", "127.0.0.1")
+    host = host_name()
     port = port_number()
     app.run(host=host, port=port, debug=debug_enabled())

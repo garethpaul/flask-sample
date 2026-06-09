@@ -5,6 +5,7 @@ ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 PLAN="$ROOT_DIR/docs/plans/2026-06-08-flask-sample-debug-baseline.md"
 GET_ONLY_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-get-only-root.md"
 PORT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-port-validation.md"
+HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-validation.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -26,6 +27,7 @@ for path in \
   "requirements.txt" \
   "templates/hello.html" \
   "tests/test_app.py" \
+  "docs/plans/2026-06-09-flask-host-validation.md" \
   "docs/plans/2026-06-09-flask-port-validation.md" \
   "docs/plans/2026-06-09-flask-get-only-root.md" \
   "docs/plans/2026-06-08-flask-sample-debug-baseline.md"; do
@@ -69,6 +71,20 @@ if ! grep -Fq "test_invalid_port_values_fall_back_to_default" "$ROOT_DIR/tests/t
   exit 1
 fi
 
+if ! grep -Fq "def host_name" "$ROOT_DIR/app.py" ||
+  grep -Fq 'os.environ.get("FLASK_RUN_HOST", "127.0.0.1")' "$ROOT_DIR/app.py" ||
+  ! grep -Fq "raw_value.strip()" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "host = host_name()" "$ROOT_DIR/app.py"; then
+  printf '%s\n' "FLASK_RUN_HOST parsing must use the validated host helper." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_blank_host_values_fall_back_to_localhost" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "0.0.0.0" "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "Tests must cover blank FLASK_RUN_HOST fallback and explicit overrides." >&2
+  exit 1
+fi
+
 if ! grep -Fq "Flask>=2.2,<3" "$ROOT_DIR/requirements.txt"; then
   printf '%s\n' "requirements.txt must pin the Flask compatibility range." >&2
   exit 1
@@ -77,6 +93,7 @@ fi
 if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   ! grep -Fq "FLASK_DEBUG" "$ROOT_DIR/README.md" ||
   ! grep -Fq "Invalid \`PORT\` values fall back to \`5000\`" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "Blank \`FLASK_RUN_HOST\` values fall back to \`127.0.0.1\`" "$ROOT_DIR/README.md" ||
   ! grep -Fq "GET-only" "$ROOT_DIR/README.md" ||
   ! grep -Fq "requirements.txt" "$ROOT_DIR/README.md"; then
   printf '%s\n' "README must document setup, debug posture, GET-only route behavior, PORT fallback, and verification." >&2
@@ -86,6 +103,7 @@ fi
 if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "debug mode" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "Invalid \`PORT\` values fall back to 5000" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "Blank \`FLASK_RUN_HOST\` values fall back to 127.0.0.1" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "GET-only" "$ROOT_DIR/VISION.md"; then
   printf '%s\n' "VISION must describe the current Flask debug, route, and port baseline." >&2
   exit 1
@@ -109,6 +127,11 @@ fi
 
 if ! grep -Fq "status: completed" "$PORT_PLAN"; then
   printf '%s\n' "PORT validation plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$HOST_PLAN"; then
+  printf '%s\n' "Host validation plan must be marked completed." >&2
   exit 1
 fi
 

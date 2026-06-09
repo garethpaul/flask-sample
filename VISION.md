@@ -31,6 +31,8 @@ Current baseline:
 - Debug mode is controlled by `FLASK_DEBUG` instead of being hardcoded.
 - Local execution binds to `127.0.0.1` unless the developer explicitly sets
   `FLASK_RUN_HOST`.
+- Blank `FLASK_RUN_HOST` values fall back to 127.0.0.1 instead of bypassing the
+  localhost default.
 - Invalid `PORT` values fall back to 5000 rather than crashing local startup.
 - Python environments, bytecode, and `.env` files are ignored.
 
@@ -39,6 +41,7 @@ Next priorities:
 - Keep README setup commands and dependency requirements current
 - Add more route tests only when route behavior grows
 - Keep local port behavior documented as startup configuration evolves
+- Keep local host parsing documented as startup configuration evolves
 
 Contribution rules:
 

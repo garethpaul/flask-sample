@@ -1,6 +1,6 @@
 import unittest
 
-from app import app, debug_enabled, port_number
+from app import app, debug_enabled, host_name, port_number
 
 
 class FlaskSampleTests(unittest.TestCase):
@@ -30,6 +30,11 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertEqual(5000, port_number("0"))
         self.assertEqual(5000, port_number("70000"))
         self.assertEqual(8080, port_number("8080"))
+
+    def test_blank_host_values_fall_back_to_localhost(self):
+        self.assertEqual("127.0.0.1", host_name(""))
+        self.assertEqual("127.0.0.1", host_name("   "))
+        self.assertEqual("0.0.0.0", host_name(" 0.0.0.0 "))
 
 
 if __name__ == "__main__":
