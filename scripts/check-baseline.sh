@@ -3,6 +3,7 @@ set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 PLAN="$ROOT_DIR/docs/plans/2026-06-08-flask-sample-debug-baseline.md"
+GET_ONLY_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-get-only-root.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -24,6 +25,7 @@ for path in \
   "requirements.txt" \
   "templates/hello.html" \
   "tests/test_app.py" \
+  "docs/plans/2026-06-09-flask-get-only-root.md" \
   "docs/plans/2026-06-08-flask-sample-debug-baseline.md"; do
   require_file "$path"
 done
@@ -40,8 +42,15 @@ fi
 
 if ! grep -Fq "FLASK_DEBUG" "$ROOT_DIR/app.py" ||
   ! grep -Fq "127.0.0.1" "$ROOT_DIR/app.py" ||
-  ! grep -Fq 'methods=["GET", "POST"]' "$ROOT_DIR/app.py"; then
-  printf '%s\n' "app.py must keep explicit local debug and route behavior." >&2
+  ! grep -Fq '@app.route("/")' "$ROOT_DIR/app.py" ||
+  grep -Fq 'methods=["GET", "POST"]' "$ROOT_DIR/app.py"; then
+  printf '%s\n' "app.py must keep explicit local debug and GET-only root route behavior." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_root_post_is_not_allowed" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "405" "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "Route tests must assert unsupported POST requests are rejected." >&2
   exit 1
 fi
 
@@ -52,14 +61,16 @@ fi
 
 if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   ! grep -Fq "FLASK_DEBUG" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "GET-only" "$ROOT_DIR/README.md" ||
   ! grep -Fq "requirements.txt" "$ROOT_DIR/README.md"; then
-  printf '%s\n' "README must document setup, debug posture, and verification." >&2
+  printf '%s\n' "README must document setup, debug posture, GET-only route behavior, and verification." >&2
   exit 1
 fi
 
 if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/VISION.md" ||
-  ! grep -Fq "debug mode" "$ROOT_DIR/VISION.md"; then
-  printf '%s\n' "VISION must describe the current Flask debug baseline." >&2
+  ! grep -Fq "debug mode" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "GET-only" "$ROOT_DIR/VISION.md"; then
+  printf '%s\n' "VISION must describe the current Flask debug and route baseline." >&2
   exit 1
 fi
 
@@ -71,6 +82,11 @@ fi
 
 if ! grep -Fq "status: completed" "$PLAN"; then
   printf '%s\n' "Plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$GET_ONLY_PLAN"; then
+  printf '%s\n' "GET-only route plan must be marked completed." >&2
   exit 1
 fi
 

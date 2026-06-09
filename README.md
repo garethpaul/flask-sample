@@ -50,6 +50,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - Run `python app.py` for local development. The app binds to `127.0.0.1:5000`
   by default.
+- The root route is GET-only and renders `templates/hello.html`.
 - Set `FLASK_DEBUG=1` only for local debugging.
 - Set `FLASK_RUN_HOST` or `PORT` locally when you need a different bind host or
   port.
@@ -63,7 +64,7 @@ make check
 ```
 
 The baseline compiles the app, runs the route tests, and verifies debug mode is
-opt-in rather than hardcoded.
+opt-in rather than hardcoded. It also verifies the root route stays GET-only.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -82,6 +83,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
+- See `docs/plans/2026-06-09-flask-get-only-root.md` for the GET-only root
+  route contract.
 - Run `make check` before pushing Flask route or configuration changes.
 
 ## Contributing

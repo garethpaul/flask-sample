@@ -13,11 +13,10 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn(b"Hello", response.data)
 
-    def test_root_post_renders_hello_template(self):
+    def test_root_post_is_not_allowed(self):
         response = self.client.post("/")
 
-        self.assertEqual(200, response.status_code)
-        self.assertIn(b"Hello", response.data)
+        self.assertEqual(405, response.status_code)
 
     def test_debug_flag_is_opt_in(self):
         self.assertFalse(debug_enabled(""))

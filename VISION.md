@@ -17,6 +17,7 @@ The current focus is:
 Priority:
 
 - Preserve the minimal route and template rendering flow
+- Keep the root route GET-only while it only renders a template
 - Keep local execution straightforward
 - Avoid adding production claims while debug mode is enabled
 - Make dependencies and setup explicit
@@ -25,6 +26,8 @@ Current baseline:
 
 - `scripts/check-baseline.sh` and `make check` compile the app and run root
   route tests.
+- The root route is GET-only and rejects unsupported POST requests with Flask's
+  default method handling.
 - Debug mode is controlled by `FLASK_DEBUG` instead of being hardcoded.
 - Local execution binds to `127.0.0.1` unless the developer explicitly sets
   `FLASK_RUN_HOST`.

@@ -13,7 +13,7 @@ def debug_enabled(value=None):
 app.debug = debug_enabled()
 
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def hello():
     return render_template("hello.html")
 
