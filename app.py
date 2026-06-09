@@ -22,6 +22,16 @@ def debug_enabled(value=None):
     return raw_value.lower() in ("1", "true", "yes", "on")
 
 
+def debug_allowed_for_host(host, value=None):
+    if not debug_enabled(value):
+        return False
+
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return host == "localhost"
+
+
 def port_number(value=None, default=5000):
     raw_value = os.environ.get("PORT", str(default)) if value is None else value
     try:
@@ -56,7 +66,7 @@ def host_name(value=None, default="127.0.0.1"):
     return default
 
 
-app.debug = debug_enabled()
+app.debug = debug_allowed_for_host(host_name())
 
 
 @app.after_request
@@ -74,4 +84,4 @@ def hello():
 if __name__ == "__main__":
     host = host_name()
     port = port_number()
-    app.run(host=host, port=port, debug=debug_enabled())
+    app.run(host=host, port=port, debug=debug_allowed_for_host(host))

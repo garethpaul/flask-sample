@@ -2,6 +2,7 @@
 
 ## 2026-06-09
 
+- Restricted opt-in Flask debug mode to loopback host bindings.
 - Validated `FLASK_RUN_HOST` shapes so URL-shaped, path-like, and host-plus-port
   values fall back to localhost.
 - Added a `Permissions-Policy` response header for unused browser capabilities

@@ -28,7 +28,8 @@ Current baseline:
   route tests.
 - The root route is GET-only and rejects unsupported POST requests with Flask's
   default method handling.
-- Debug mode is controlled by `FLASK_DEBUG` instead of being hardcoded.
+- Debug mode is controlled by `FLASK_DEBUG` instead of being hardcoded, and it
+  is enabled only for loopback host bindings.
 - Local execution binds to `127.0.0.1` unless the developer explicitly sets
   `FLASK_RUN_HOST`.
 - Blank `FLASK_RUN_HOST` values fall back to 127.0.0.1 instead of bypassing the
@@ -53,6 +54,7 @@ Next priorities:
 - Keep local port behavior documented as startup configuration evolves
 - Keep local host parsing documented as startup configuration evolves
 - Keep host shape validation covered when changing startup binding behavior
+- Keep debug mode loopback-only when changing startup binding behavior
 - Preserve the basic response header hook when adding routes
 - Keep frame embedding disabled unless a documented use case is added
 - Keep the CSP updated if templates begin loading external assets

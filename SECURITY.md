@@ -26,6 +26,8 @@ Helpful reports include:
 
 - This repository appears to be a public sample, documentation, or utility project. The active security scope is the code and documentation on the default branch.
 - Review found network clients, sockets, web APIs, or service endpoints; changes in those areas should receive security-focused review before merge.
+- Debug mode should stay opt-in and loopback-only so the Werkzeug debugger is
+  not exposed on public host bindings.
 - Response headers should keep the minimal Content-Security-Policy unless a documented asset or embedding need changes it.
 - Local host binding should reject URL-shaped, path-like, or host-plus-port
   values and keep port selection in `PORT`.

@@ -1,6 +1,6 @@
 import unittest
 
-from app import app, debug_enabled, host_name, port_number
+from app import app, debug_allowed_for_host, debug_enabled, host_name, port_number
 
 
 class FlaskSampleTests(unittest.TestCase):
@@ -51,6 +51,14 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertFalse(debug_enabled("0"))
         self.assertTrue(debug_enabled("1"))
         self.assertTrue(debug_enabled("true"))
+
+    def test_debug_flag_requires_loopback_host(self):
+        self.assertTrue(debug_allowed_for_host("127.0.0.1", "1"))
+        self.assertTrue(debug_allowed_for_host("localhost", "true"))
+        self.assertTrue(debug_allowed_for_host("::1", "yes"))
+        self.assertFalse(debug_allowed_for_host("0.0.0.0", "1"))
+        self.assertFalse(debug_allowed_for_host("example.com", "1"))
+        self.assertFalse(debug_allowed_for_host("127.0.0.1", "0"))
 
     def test_invalid_port_values_fall_back_to_default(self):
         self.assertEqual(5000, port_number(""))
