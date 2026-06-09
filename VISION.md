@@ -33,6 +33,8 @@ Current baseline:
   `FLASK_RUN_HOST`.
 - Blank `FLASK_RUN_HOST` values fall back to 127.0.0.1 instead of bypassing the
   localhost default.
+- URL-shaped, path-like, and host-plus-port `FLASK_RUN_HOST` values fall back
+  to 127.0.0.1; `PORT` remains the separate port configuration.
 - Invalid `PORT` values fall back to 5000 rather than crashing local startup.
 - Responses include basic security headers for content sniffing, clickjacking
   protection, and referrer policy.
@@ -50,6 +52,7 @@ Next priorities:
 - Add more route tests only when route behavior grows
 - Keep local port behavior documented as startup configuration evolves
 - Keep local host parsing documented as startup configuration evolves
+- Keep host shape validation covered when changing startup binding behavior
 - Preserve the basic response header hook when adding routes
 - Keep frame embedding disabled unless a documented use case is added
 - Keep the CSP updated if templates begin loading external assets

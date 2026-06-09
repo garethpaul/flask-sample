@@ -10,6 +10,7 @@ HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-basic-security-headers.md"
 FRAME_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-clickjacking-header.md"
 CSP_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-content-security-policy-header.md"
 PERMISSIONS_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-permissions-policy-header.md"
+HOST_SHAPE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-shape-validation.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -33,6 +34,7 @@ for path in \
   "tests/test_app.py" \
   "docs/plans/2026-06-09-content-security-policy-header.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
+  "docs/plans/2026-06-09-flask-host-shape-validation.md" \
   "docs/plans/2026-06-09-permissions-policy-header.md" \
   "docs/plans/2026-06-09-flask-host-validation.md" \
   "docs/plans/2026-06-09-basic-security-headers.md" \
@@ -113,12 +115,17 @@ fi
 if ! grep -Fq "def host_name" "$ROOT_DIR/app.py" ||
   grep -Fq 'os.environ.get("FLASK_RUN_HOST", "127.0.0.1")' "$ROOT_DIR/app.py" ||
   ! grep -Fq "raw_value.strip()" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "ipaddress.ip_address(host)" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "HOST_LABEL.match(label)" "$ROOT_DIR/app.py" ||
   ! grep -Fq "host = host_name()" "$ROOT_DIR/app.py"; then
   printf '%s\n' "FLASK_RUN_HOST parsing must use the validated host helper." >&2
   exit 1
 fi
 
 if ! grep -Fq "test_blank_host_values_fall_back_to_localhost" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "test_invalid_host_shapes_fall_back_to_localhost" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "127.0.0.1:5000" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "http://127.0.0.1" "$ROOT_DIR/tests/test_app.py" ||
   ! grep -Fq "0.0.0.0" "$ROOT_DIR/tests/test_app.py"; then
   printf '%s\n' "Tests must cover blank FLASK_RUN_HOST fallback and explicit overrides." >&2
   exit 1
@@ -192,6 +199,11 @@ fi
 
 if ! grep -Fq "status: completed" "$PERMISSIONS_HEADERS_PLAN"; then
   printf '%s\n' "Permissions-Policy header plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$HOST_SHAPE_PLAN"; then
+  printf '%s\n' "Host shape validation plan must be marked completed." >&2
   exit 1
 fi
 

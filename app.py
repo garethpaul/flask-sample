@@ -1,4 +1,6 @@
+import ipaddress
 import os
+import re
 from flask import Flask, render_template
 
 app = Flask(__name__)
@@ -11,6 +13,8 @@ BASIC_SECURITY_HEADERS = {
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
 }
+
+HOST_LABEL = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
 
 
 def debug_enabled(value=None):
@@ -33,7 +37,23 @@ def port_number(value=None, default=5000):
 def host_name(value=None, default="127.0.0.1"):
     raw_value = os.environ.get("FLASK_RUN_HOST", default) if value is None else value
     host = raw_value.strip()
-    return host or default
+    if not host:
+        return default
+
+    try:
+        ipaddress.ip_address(host)
+        return host
+    except ValueError:
+        pass
+
+    if host.endswith(".") or len(host) > 253:
+        return default
+
+    labels = host.split(".")
+    if all(HOST_LABEL.match(label) for label in labels):
+        return host
+
+    return default
 
 
 app.debug = debug_enabled()

@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Validated `FLASK_RUN_HOST` shapes so URL-shaped, path-like, and host-plus-port
+  values fall back to localhost.
 - Added a `Permissions-Policy` response header for unused browser capabilities
   with unit and baseline coverage.
 - Added a minimal Content-Security-Policy response header with regression and

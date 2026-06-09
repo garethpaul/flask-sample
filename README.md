@@ -55,6 +55,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - Set `FLASK_RUN_HOST` or `PORT` locally when you need a different bind host or
   port.
 - Blank `FLASK_RUN_HOST` values fall back to `127.0.0.1`.
+- URL-shaped, path-like, and host-plus-port `FLASK_RUN_HOST` values fall back
+  to `127.0.0.1`; set the port with `PORT`.
 - Invalid `PORT` values fall back to `5000`.
 
 ## Testing and Verification
@@ -68,10 +70,11 @@ make check
 The baseline compiles the app, runs the route tests, and verifies debug mode is
 opt-in rather than hardcoded. It also verifies the root route stays GET-only and
 startup port parsing falls back safely for invalid local environment values.
-Blank host values also fall back to localhost. Responses include basic security
-headers for content sniffing, clickjacking protection, referrer policy, and a
-minimal Content-Security-Policy. It also keeps a `Permissions-Policy` header
-that disables unused camera, microphone, and geolocation capabilities.
+Blank or malformed host values also fall back to localhost. Responses include
+basic security headers for content sniffing, clickjacking protection, referrer
+policy, and a minimal Content-Security-Policy. It also keeps a
+`Permissions-Policy` header that disables unused camera, microphone, and
+geolocation capabilities.
 
 The `make lint`, `make test`, and `make build` aliases run the same local
 baseline or unit tests while this sample has no narrower installed gates.
@@ -107,6 +110,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   guardrails.
 - See `docs/plans/2026-06-09-flask-host-validation.md` for local host parsing
   guardrails.
+- See `docs/plans/2026-06-09-flask-host-shape-validation.md` for host shape
+  validation guardrails.
 - See `docs/plans/2026-06-09-basic-security-headers.md` for response header
   guardrails.
 - See `docs/plans/2026-06-09-clickjacking-header.md` for the frame-embedding

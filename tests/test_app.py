@@ -64,6 +64,13 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertEqual("127.0.0.1", host_name("   "))
         self.assertEqual("0.0.0.0", host_name(" 0.0.0.0 "))
 
+    def test_invalid_host_shapes_fall_back_to_localhost(self):
+        self.assertEqual("127.0.0.1", host_name("http://127.0.0.1"))
+        self.assertEqual("127.0.0.1", host_name("127.0.0.1:5000"))
+        self.assertEqual("127.0.0.1", host_name("local/host"))
+        self.assertEqual("localhost", host_name("localhost"))
+        self.assertEqual("::1", host_name("::1"))
+
 
 if __name__ == "__main__":
     unittest.main()
