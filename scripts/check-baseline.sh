@@ -7,6 +7,7 @@ GET_ONLY_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-get-only-root.md"
 PORT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-port-validation.md"
 HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-validation.md"
 HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-basic-security-headers.md"
+FRAME_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-clickjacking-header.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -28,6 +29,7 @@ for path in \
   "requirements.txt" \
   "templates/hello.html" \
   "tests/test_app.py" \
+  "docs/plans/2026-06-09-clickjacking-header.md" \
   "docs/plans/2026-06-09-flask-host-validation.md" \
   "docs/plans/2026-06-09-basic-security-headers.md" \
   "docs/plans/2026-06-09-flask-port-validation.md" \
@@ -62,9 +64,16 @@ fi
 
 if ! grep -Fq "@app.after_request" "$ROOT_DIR/app.py" ||
   ! grep -Fq "X-Content-Type-Options" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "X-Frame-Options" "$ROOT_DIR/app.py" ||
   ! grep -Fq "Referrer-Policy" "$ROOT_DIR/app.py" ||
   ! grep -Fq "test_root_get_sets_basic_security_headers" "$ROOT_DIR/tests/test_app.py"; then
   printf '%s\n' "Flask responses must keep basic security headers and test coverage." >&2
+  exit 1
+fi
+
+if ! grep -Fq '"DENY"' "$ROOT_DIR/app.py" ||
+  ! grep -Fq 'response.headers.get("X-Frame-Options")' "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "Flask responses must keep the clickjacking protection header and test coverage." >&2
   exit 1
 fi
 
@@ -147,6 +156,11 @@ fi
 
 if ! grep -Fq "status: completed" "$HEADERS_PLAN"; then
   printf '%s\n' "Basic security headers plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$FRAME_HEADERS_PLAN"; then
+  printf '%s\n' "Clickjacking header plan must be marked completed." >&2
   exit 1
 fi
 

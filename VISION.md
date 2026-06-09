@@ -34,8 +34,8 @@ Current baseline:
 - Blank `FLASK_RUN_HOST` values fall back to 127.0.0.1 instead of bypassing the
   localhost default.
 - Invalid `PORT` values fall back to 5000 rather than crashing local startup.
-- Responses include basic security headers for content sniffing and referrer
-  policy.
+- Responses include basic security headers for content sniffing, clickjacking
+  protection, and referrer policy.
 - Python environments, bytecode, and `.env` files are ignored.
 
 Next priorities:
@@ -45,6 +45,7 @@ Next priorities:
 - Keep local port behavior documented as startup configuration evolves
 - Keep local host parsing documented as startup configuration evolves
 - Preserve the basic response header hook when adding routes
+- Keep frame embedding disabled unless a documented use case is added
 
 Contribution rules:
 

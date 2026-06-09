@@ -69,7 +69,7 @@ The baseline compiles the app, runs the route tests, and verifies debug mode is
 opt-in rather than hardcoded. It also verifies the root route stays GET-only and
 startup port parsing falls back safely for invalid local environment values.
 Blank host values also fall back to localhost. Responses include basic security
-headers for content sniffing and referrer policy.
+headers for content sniffing, clickjacking protection, and referrer policy.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -85,6 +85,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   interface.
 - Keep response headers such as `X-Content-Type-Options` and `Referrer-Policy`
   in place when adding routes.
+- Keep `X-Frame-Options: DENY` in place unless a documented embedding use case
+  is added.
 
 ## Maintenance Notes
 
@@ -98,6 +100,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   guardrails.
 - See `docs/plans/2026-06-09-basic-security-headers.md` for response header
   guardrails.
+- See `docs/plans/2026-06-09-clickjacking-header.md` for the frame-embedding
+  header guard.
 - Run `make check` before pushing Flask route or configuration changes.
 
 ## Contributing

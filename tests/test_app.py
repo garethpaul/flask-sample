@@ -21,6 +21,10 @@ class FlaskSampleTests(unittest.TestCase):
             response.headers.get("X-Content-Type-Options"),
         )
         self.assertEqual(
+            "DENY",
+            response.headers.get("X-Frame-Options"),
+        )
+        self.assertEqual(
             "no-referrer",
             response.headers.get("Referrer-Policy"),
         )
