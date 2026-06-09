@@ -1,6 +1,6 @@
 import unittest
 
-from app import app, debug_enabled
+from app import app, debug_enabled, port_number
 
 
 class FlaskSampleTests(unittest.TestCase):
@@ -23,6 +23,13 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertFalse(debug_enabled("0"))
         self.assertTrue(debug_enabled("1"))
         self.assertTrue(debug_enabled("true"))
+
+    def test_invalid_port_values_fall_back_to_default(self):
+        self.assertEqual(5000, port_number(""))
+        self.assertEqual(5000, port_number("not-a-port"))
+        self.assertEqual(5000, port_number("0"))
+        self.assertEqual(5000, port_number("70000"))
+        self.assertEqual(8080, port_number("8080"))
 
 
 if __name__ == "__main__":

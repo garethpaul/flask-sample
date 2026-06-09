@@ -4,6 +4,7 @@ set -eu
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 PLAN="$ROOT_DIR/docs/plans/2026-06-08-flask-sample-debug-baseline.md"
 GET_ONLY_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-get-only-root.md"
+PORT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-port-validation.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -25,6 +26,7 @@ for path in \
   "requirements.txt" \
   "templates/hello.html" \
   "tests/test_app.py" \
+  "docs/plans/2026-06-09-flask-port-validation.md" \
   "docs/plans/2026-06-09-flask-get-only-root.md" \
   "docs/plans/2026-06-08-flask-sample-debug-baseline.md"; do
   require_file "$path"
@@ -54,6 +56,19 @@ if ! grep -Fq "test_root_post_is_not_allowed" "$ROOT_DIR/tests/test_app.py" ||
   exit 1
 fi
 
+if ! grep -Fq "def port_number" "$ROOT_DIR/app.py" ||
+  grep -Fq "int(os.environ.get(\"PORT\"" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "port = port_number()" "$ROOT_DIR/app.py"; then
+  printf '%s\n' "PORT parsing must use the validated port helper." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_invalid_port_values_fall_back_to_default" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "70000" "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "Tests must cover invalid and out-of-range PORT values." >&2
+  exit 1
+fi
+
 if ! grep -Fq "Flask>=2.2,<3" "$ROOT_DIR/requirements.txt"; then
   printf '%s\n' "requirements.txt must pin the Flask compatibility range." >&2
   exit 1
@@ -61,16 +76,18 @@ fi
 
 if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   ! grep -Fq "FLASK_DEBUG" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "Invalid \`PORT\` values fall back to \`5000\`" "$ROOT_DIR/README.md" ||
   ! grep -Fq "GET-only" "$ROOT_DIR/README.md" ||
   ! grep -Fq "requirements.txt" "$ROOT_DIR/README.md"; then
-  printf '%s\n' "README must document setup, debug posture, GET-only route behavior, and verification." >&2
+  printf '%s\n' "README must document setup, debug posture, GET-only route behavior, PORT fallback, and verification." >&2
   exit 1
 fi
 
 if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "debug mode" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "Invalid \`PORT\` values fall back to 5000" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "GET-only" "$ROOT_DIR/VISION.md"; then
-  printf '%s\n' "VISION must describe the current Flask debug and route baseline." >&2
+  printf '%s\n' "VISION must describe the current Flask debug, route, and port baseline." >&2
   exit 1
 fi
 
@@ -87,6 +104,11 @@ fi
 
 if ! grep -Fq "status: completed" "$GET_ONLY_PLAN"; then
   printf '%s\n' "GET-only route plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$PORT_PLAN"; then
+  printf '%s\n' "PORT validation plan must be marked completed." >&2
   exit 1
 fi
 
