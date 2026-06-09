@@ -52,6 +52,11 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertTrue(debug_enabled("1"))
         self.assertTrue(debug_enabled("true"))
 
+    def test_debug_flag_normalizes_whitespace_and_case(self):
+        self.assertTrue(debug_enabled(" TRUE "))
+        self.assertTrue(debug_enabled("\ton\n"))
+        self.assertFalse(debug_enabled(" false "))
+
     def test_debug_flag_requires_loopback_host(self):
         self.assertTrue(debug_allowed_for_host("127.0.0.1", "1"))
         self.assertTrue(debug_allowed_for_host("localhost", "true"))

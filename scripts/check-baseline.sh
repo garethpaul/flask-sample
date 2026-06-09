@@ -12,6 +12,7 @@ CSP_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-content-security-policy-header
 PERMISSIONS_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-permissions-policy-header.md"
 HOST_SHAPE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-shape-validation.md"
 DEBUG_HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-loopback-debug-guard.md"
+DEBUG_VALUE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-debug-value-normalization.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -34,6 +35,7 @@ for path in \
   "templates/hello.html" \
   "tests/test_app.py" \
   "docs/plans/2026-06-09-content-security-policy-header.md" \
+  "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
   "docs/plans/2026-06-09-flask-host-shape-validation.md" \
@@ -57,6 +59,7 @@ if grep -Fq "app.debug = True" "$ROOT_DIR/app.py" ||
 fi
 
 if ! grep -Fq "FLASK_DEBUG" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "str(raw_value).strip().lower()" "$ROOT_DIR/app.py" ||
   ! grep -Fq "debug_allowed_for_host" "$ROOT_DIR/app.py" ||
   ! grep -Fq "127.0.0.1" "$ROOT_DIR/app.py" ||
   ! grep -Fq '@app.route("/")' "$ROOT_DIR/app.py" ||
@@ -73,6 +76,13 @@ if ! grep -Fq "def debug_allowed_for_host" "$ROOT_DIR/app.py" ||
   ! grep -Fq "test_debug_flag_requires_loopback_host" "$ROOT_DIR/tests/test_app.py" ||
   ! grep -Fq "example.com" "$ROOT_DIR/tests/test_app.py"; then
   printf '%s\n' "Flask debug mode must remain loopback-only when enabled." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_debug_flag_normalizes_whitespace_and_case" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq '" TRUE "' "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq '" false "' "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "Tests must cover FLASK_DEBUG value normalization." >&2
   exit 1
 fi
 
@@ -152,6 +162,7 @@ fi
 
 if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   ! grep -Fq "FLASK_DEBUG" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "case-normalized" "$ROOT_DIR/README.md" ||
   ! grep -Fq "loopback" "$ROOT_DIR/README.md" ||
   ! grep -Fq "Invalid \`PORT\` values fall back to \`5000\`" "$ROOT_DIR/README.md" ||
   ! grep -Fq "Blank \`FLASK_RUN_HOST\` values fall back to \`127.0.0.1\`" "$ROOT_DIR/README.md" ||
@@ -164,6 +175,7 @@ fi
 
 if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "debug mode" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "case-normalized" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "loopback" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "Invalid \`PORT\` values fall back to 5000" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "Blank \`FLASK_RUN_HOST\` values fall back to 127.0.0.1" "$ROOT_DIR/VISION.md" ||
@@ -230,6 +242,16 @@ fi
 
 if ! grep -Fq "make check" "$DEBUG_HOST_PLAN"; then
   printf '%s\n' "Loopback debug guard plan must record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$DEBUG_VALUE_PLAN"; then
+  printf '%s\n' "Debug value normalization plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$DEBUG_VALUE_PLAN"; then
+  printf '%s\n' "Debug value normalization plan must record make check verification." >&2
   exit 1
 fi
 

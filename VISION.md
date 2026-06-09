@@ -30,6 +30,8 @@ Current baseline:
   default method handling.
 - Debug mode is controlled by `FLASK_DEBUG` instead of being hardcoded, and it
   is enabled only for loopback host bindings.
+- `FLASK_DEBUG` values are trimmed and case-normalized before the opt-in
+  allowlist is checked.
 - Local execution binds to `127.0.0.1` unless the developer explicitly sets
   `FLASK_RUN_HOST`.
 - Blank `FLASK_RUN_HOST` values fall back to 127.0.0.1 instead of bypassing the
@@ -55,6 +57,7 @@ Next priorities:
 - Keep local host parsing documented as startup configuration evolves
 - Keep host shape validation covered when changing startup binding behavior
 - Keep debug mode loopback-only when changing startup binding behavior
+- Keep debug flag value normalization covered when changing startup config
 - Preserve the basic response header hook when adding routes
 - Keep frame embedding disabled unless a documented use case is added
 - Keep the CSP updated if templates begin loading external assets

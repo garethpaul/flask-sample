@@ -53,6 +53,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - The root route is GET-only and renders `templates/hello.html`.
 - Set `FLASK_DEBUG=1` only for local debugging; debug mode is enabled only when
   the resolved bind host is loopback.
+- `FLASK_DEBUG` values are trimmed and case-normalized before matching `1`,
+  `true`, `yes`, or `on`.
 - Set `FLASK_RUN_HOST` or `PORT` locally when you need a different bind host or
   port.
 - Blank `FLASK_RUN_HOST` values fall back to `127.0.0.1`.
@@ -70,12 +72,13 @@ make check
 
 The baseline compiles the app, runs the route tests, and verifies debug mode is
 opt-in rather than hardcoded and remains loopback-only when enabled. It also
-verifies the root route stays GET-only and startup port parsing falls back
-safely for invalid local environment values. Blank or malformed host values
-also fall back to localhost. Responses include basic security headers for
-content sniffing, clickjacking protection, referrer policy, and a minimal
-Content-Security-Policy. It also keeps a `Permissions-Policy` header that
-disables unused camera, microphone, and geolocation capabilities.
+verifies `FLASK_DEBUG` value normalization before the opt-in check, the
+GET-only root route, and startup port parsing fallback for invalid local
+environment values. Blank or malformed host values also fall back to localhost.
+Responses include basic security headers for content sniffing, clickjacking
+protection, referrer policy, and a minimal Content-Security-Policy. It also
+keeps a `Permissions-Policy` header that disables unused camera, microphone,
+and geolocation capabilities.
 
 The `make lint`, `make test`, and `make build` aliases run the same local
 baseline or unit tests while this sample has no narrower installed gates.

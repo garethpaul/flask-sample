@@ -2,6 +2,7 @@
 
 ## 2026-06-09
 
+- Normalized `FLASK_DEBUG` values before matching the opt-in debug allowlist.
 - Restricted opt-in Flask debug mode to loopback host bindings.
 - Validated `FLASK_RUN_HOST` shapes so URL-shaped, path-like, and host-plus-port
   values fall back to localhost.

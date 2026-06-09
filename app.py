@@ -19,7 +19,8 @@ HOST_LABEL = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
 
 def debug_enabled(value=None):
     raw_value = os.environ.get("FLASK_DEBUG", "") if value is None else value
-    return raw_value.lower() in ("1", "true", "yes", "on")
+    normalized_value = str(raw_value).strip().lower()
+    return normalized_value in ("1", "true", "yes", "on")
 
 
 def debug_allowed_for_host(host, value=None):
