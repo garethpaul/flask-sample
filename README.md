@@ -82,6 +82,9 @@ and geolocation capabilities.
 
 The `make lint`, `make test`, and `make build` aliases run the same local
 baseline or unit tests while this sample has no narrower installed gates.
+GitHub Actions installs `requirements.txt`, verifies dependency consistency,
+and runs `make check` on Python 3.10, 3.12, and 3.14 for pull requests and
+pushes.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -127,6 +130,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Content-Security-Policy header guard.
 - See `docs/plans/2026-06-09-permissions-policy-header.md` for the browser
   capability policy guard.
+- See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
 - Run `make check` before pushing Flask route or configuration changes.
 
 ## Contributing

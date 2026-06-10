@@ -35,7 +35,11 @@ Helpful reports include:
   values and keep port selection in `PORT`.
 - Response headers should keep unused browser capabilities disabled with
   `Permissions-Policy` unless a documented feature needs them.
-- No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
+- GitHub Actions uses read-only repository permissions and runs the same
+  `make check` baseline as local development; do not add secrets or deployment
+  steps without a separate security review.
+- Dependency manifest detected: `requirements.txt`. Review dependency range
+  changes deliberately and keep hosted compatibility checks green.
 
 ## Service and API Notes
 

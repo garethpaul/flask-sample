@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-10
+
+- Added a pinned, least-privilege GitHub Actions matrix that verifies
+  dependencies and runs `make check` on Python 3.10, 3.12, and 3.14.
+
 ## 2026-06-09
 
 - Normalized `FLASK_DEBUG` values before matching the opt-in debug allowlist.

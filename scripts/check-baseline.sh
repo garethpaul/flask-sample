@@ -13,6 +13,8 @@ PERMISSIONS_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-permissions-policy-hea
 HOST_SHAPE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-shape-validation.md"
 DEBUG_HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-loopback-debug-guard.md"
 DEBUG_VALUE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-debug-value-normalization.md"
+CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
+CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -24,6 +26,7 @@ require_file() {
 }
 
 for path in \
+  ".github/workflows/check.yml" \
   ".gitignore" \
   "CHANGES.md" \
   "Makefile" \
@@ -34,6 +37,7 @@ for path in \
   "requirements.txt" \
   "templates/hello.html" \
   "tests/test_app.py" \
+  "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-09-content-security-policy-header.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
@@ -160,7 +164,31 @@ if ! grep -Fq "Flask>=2.2,<3" "$ROOT_DIR/requirements.txt"; then
   exit 1
 fi
 
+if ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
+  ! grep -Fq "contents: read" "$CI_WORKFLOW" ||
+  ! grep -Fq "cancel-in-progress: true" "$CI_WORKFLOW" ||
+  ! grep -Fq "runs-on: ubuntu-24.04" "$CI_WORKFLOW" ||
+  ! grep -Fq "timeout-minutes: 10" "$CI_WORKFLOW" ||
+  ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
+  ! grep -Fq "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" "$CI_WORKFLOW" ||
+  ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
+  ! grep -Fq "python -m pip install -r requirements.txt" "$CI_WORKFLOW" ||
+  ! grep -Fq "python -m pip check" "$CI_WORKFLOW" ||
+  ! grep -Fq "make check" "$CI_WORKFLOW"; then
+  printf '%s\n' "GitHub Actions must keep the pinned multi-version Flask check contract." >&2
+  exit 1
+fi
+
+if ! grep -Fq "read-only repository permissions" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq 'Dependency manifest detected: `requirements.txt`' "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "Python 3.10, 3.12, and 3.14" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "docs/plans/2026-06-10-ci-baseline.md" "$ROOT_DIR/README.md"; then
+  printf '%s\n' "Project docs must record the hosted Python compatibility baseline." >&2
+  exit 1
+fi
+
 if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "GitHub Actions" "$ROOT_DIR/README.md" ||
   ! grep -Fq "FLASK_DEBUG" "$ROOT_DIR/README.md" ||
   ! grep -Fq "case-normalized" "$ROOT_DIR/README.md" ||
   ! grep -Fq "loopback" "$ROOT_DIR/README.md" ||
@@ -174,6 +202,7 @@ if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
 fi
 
 if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "GitHub Actions" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "debug mode" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "case-normalized" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "loopback" "$ROOT_DIR/VISION.md" ||
@@ -252,6 +281,13 @@ fi
 
 if ! grep -Fq "make check" "$DEBUG_VALUE_PLAN"; then
   printf '%s\n' "Debug value normalization plan must record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$CI_PLAN" ||
+  ! grep -Fq "GitHub Actions" "$CI_PLAN" ||
+  ! grep -Fq "make check" "$CI_PLAN"; then
+  printf '%s\n' "CI baseline plan must record completed status and make check verification." >&2
   exit 1
 fi
 
