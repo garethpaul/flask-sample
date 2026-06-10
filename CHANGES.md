@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- Tightened Content Security Policy with explicit object, base URL,
+  form-action, and frame-ancestor boundaries.
 - Added a pinned, least-privilege GitHub Actions matrix that verifies
   dependencies and runs `make check` on Python 3.10, 3.12, and 3.14.
 

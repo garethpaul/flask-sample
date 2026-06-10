@@ -76,7 +76,8 @@ verifies `FLASK_DEBUG` value normalization before the opt-in check, the
 GET-only root route, and startup port parsing fallback for invalid local
 environment values. Blank or malformed host values also fall back to localhost.
 Responses include basic security headers for content sniffing, clickjacking
-protection, referrer policy, and a minimal Content-Security-Policy. It also
+protection, referrer policy, and a Content-Security-Policy that blocks plugin
+objects, base URL rewriting, cross-origin form targets, and framing. It also
 keeps a `Permissions-Policy` header that disables unused camera, microphone,
 and geolocation capabilities.
 

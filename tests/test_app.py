@@ -37,7 +37,8 @@ class FlaskSampleTests(unittest.TestCase):
         response = self.client.get("/")
 
         self.assertEqual(
-            "default-src 'self'; frame-ancestors 'none'",
+            "default-src 'self'; object-src 'none'; base-uri 'none'; "
+            "form-action 'self'; frame-ancestors 'none'",
             response.headers.get("Content-Security-Policy"),
         )
 

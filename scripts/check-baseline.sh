@@ -9,6 +9,7 @@ HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-validation.md"
 HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-basic-security-headers.md"
 FRAME_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-clickjacking-header.md"
 CSP_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-content-security-policy-header.md"
+CSP_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-10-content-security-policy-boundaries.md"
 PERMISSIONS_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-permissions-policy-header.md"
 HOST_SHAPE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-shape-validation.md"
 DEBUG_HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-loopback-debug-guard.md"
@@ -39,6 +40,7 @@ for path in \
   "tests/test_app.py" \
   "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-09-content-security-policy-header.md" \
+  "docs/plans/2026-06-10-content-security-policy-boundaries.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -108,7 +110,10 @@ if ! grep -Fq "@app.after_request" "$ROOT_DIR/app.py" ||
   exit 1
 fi
 
-if ! grep -Fq "default-src 'self'; frame-ancestors 'none'" "$ROOT_DIR/app.py" ||
+if ! grep -Fq "object-src 'none'" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "base-uri 'none'" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "form-action 'self'" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "frame-ancestors 'none'" "$ROOT_DIR/app.py" ||
   ! grep -Fq "test_root_get_sets_content_security_policy" "$ROOT_DIR/tests/test_app.py"; then
   printf '%s\n' "Flask responses must keep Content-Security-Policy coverage." >&2
   exit 1
@@ -251,6 +256,11 @@ fi
 
 if ! grep -Fq "status: completed" "$CSP_HEADERS_PLAN"; then
   printf '%s\n' "Content-Security-Policy header plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$CSP_BOUNDARY_PLAN"; then
+  printf '%s\n' "Content-Security-Policy boundary plan must be marked completed." >&2
   exit 1
 fi
 

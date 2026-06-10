@@ -30,7 +30,9 @@ Helpful reports include:
   not exposed on public host bindings.
 - `FLASK_DEBUG` values should be trimmed and case-normalized before checking
   the opt-in allowlist.
-- Response headers should keep the minimal Content-Security-Policy unless a documented asset or embedding need changes it.
+- Response headers should keep explicit object, base URL, form-action, and
+  frame-ancestor Content-Security-Policy boundaries unless a documented need
+  changes them.
 - Local host binding should reject URL-shaped, path-like, or host-plus-port
   values and keep port selection in `PORT`.
 - Response headers should keep unused browser capabilities disabled with
