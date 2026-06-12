@@ -2,7 +2,9 @@
 
 ## Repository purpose
 
-`garethpaul/flask-sample` is a static web project. Flask sample
+`garethpaul/flask-sample` is a minimal server-rendered Flask application used
+to demonstrate safe local startup configuration, a GET-only route, and secure
+default response headers.
 
 ## Project structure
 
@@ -24,7 +26,8 @@
 
 ## Coding conventions
 
-- Language mix noted in the README: Python (1).
+- Support the declared Flask `>=3.1.3,<3.2` range and Python 3.10, 3.12, and
+  3.14 compatibility matrix.
 - Prefer dependency-free tests or stdlib checks when legacy packages are unavailable.
 
 ## Testing guidance
@@ -47,7 +50,9 @@
 - `FLASK_DEBUG` should only enable debug mode for loopback host bindings.
 - Keep response headers such as `X-Content-Type-Options` and `Referrer-Policy` in place when adding routes.
 - Keep `X-Frame-Options: DENY` in place unless a documented embedding use case is added.
-- Keep the minimal Content-Security-Policy in place when adding new templates, routes, or external assets.
+- Keep the default-deny Content-Security-Policy in place when adding new templates, routes, or external assets; add only narrow reviewed exceptions for required asset types.
+- Keep `Permissions-Policy` disabling camera, microphone, and geolocation unless a documented feature requires one of those capabilities.
+- Treat `FLASK_RUN_HOST` and `PORT` as separate inputs. Reject URL-shaped, path-like, and host-plus-port host values, and retain safe localhost/default-port fallbacks.
 
 ## Agent workflow
 
