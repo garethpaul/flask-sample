@@ -430,4 +430,31 @@ if ! grep -Fq "status: completed" "$CI_PLAN" ||
   exit 1
 fi
 
+python3 - "$TRUSTED_HOSTS_PLAN" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+plan = Path(sys.argv[1]).read_text()
+frontmatter = plan.split("---", 2)[1]
+statuses = re.findall(r"^status: .+$", frontmatter, flags=re.MULTILINE)
+verification = plan.split("## Verification Completed\n", 1)[-1]
+required = (
+    "all 14 tests",
+    "push run `27392343275`",
+    "pull-request run `27392347000`",
+    "push run `27392361353`",
+    "CodeQL run `27402320555`",
+)
+
+if (
+    statuses != ["status: completed"]
+    or any(item not in verification for item in required)
+    or re.search(r"\b(?:pending|todo|tbd|not run)\b", verification, re.IGNORECASE)
+):
+    raise SystemExit(
+        "Flask trusted-hosts plan must remain completed with actual verification recorded."
+    )
+PY
+
 printf '%s\n' "flask-sample debug baseline checks passed."
