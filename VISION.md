@@ -47,6 +47,8 @@ Current baseline:
   microphone, and geolocation capabilities.
 - `make lint`, `make test`, and `make build` run the local baseline or unit
   tests while this sample has no narrower installed gates.
+- GitHub Actions runs `make check` on pull requests and pushes so the hosted
+  gate matches local verification.
 - Python environments, bytecode, and `.env` files are ignored.
 
 Next priorities:
@@ -63,6 +65,7 @@ Next priorities:
 - Keep the CSP updated if templates begin loading external assets
 - Keep unused browser capabilities disabled unless the sample gains a feature
   that needs them
+- Keep the hosted CI workflow aligned with `make check`
 
 Contribution rules:
 

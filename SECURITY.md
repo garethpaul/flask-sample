@@ -35,6 +35,9 @@ Helpful reports include:
   values and keep port selection in `PORT`.
 - Response headers should keep unused browser capabilities disabled with
   `Permissions-Policy` unless a documented feature needs them.
+- GitHub Actions runs the same `make check` baseline as local development; do
+  not add secrets or deployment steps to that workflow without a separate
+  security review.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
 
 ## Service and API Notes

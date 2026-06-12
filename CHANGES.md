@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-10
+
+- Added a GitHub Actions workflow that installs Flask dependencies and runs the
+  local `make check` baseline for pushes and pull requests.
+
 ## 2026-06-09
 
 - Normalized `FLASK_DEBUG` values before matching the opt-in debug allowlist.
