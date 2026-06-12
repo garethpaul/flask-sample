@@ -33,6 +33,8 @@ Helpful reports include:
 - Response headers should keep explicit object, base URL, form-action, and
   frame-ancestor Content-Security-Policy boundaries unless a documented need
   changes them.
+- Keep the default-deny subresource policy unless a reviewed template change
+  adds a narrow CSP exception for a required asset type.
 - Local host binding should reject URL-shaped, path-like, or host-plus-port
   values and keep port selection in `PORT`.
 - Response headers should keep unused browser capabilities disabled with

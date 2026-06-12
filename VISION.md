@@ -41,8 +41,8 @@ Current baseline:
 - Invalid `PORT` values fall back to 5000 rather than crashing local startup.
 - Responses include basic security headers for content sniffing, clickjacking
   protection, and referrer policy.
-- Responses include a Content-Security-Policy for same-origin assets with
-  explicit object, base URL, form-action, and framing boundaries.
+- Responses include a default-deny subresource policy with explicit object,
+  base URL, form-action, and framing boundaries.
 - Responses include a Permissions-Policy that disables unused camera,
   microphone, and geolocation capabilities.
 - `make lint`, `make test`, and `make build` run the local baseline or unit

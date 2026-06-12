@@ -8,7 +8,7 @@ app.static_dir = os.path.join(os.getcwd(), "static")
 
 BASIC_SECURITY_HEADERS = {
     "Content-Security-Policy": (
-        "default-src 'self'; object-src 'none'; base-uri 'none'; "
+        "default-src 'none'; object-src 'none'; base-uri 'none'; "
         "form-action 'self'; frame-ancestors 'none'"
     ),
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",

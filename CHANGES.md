@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-06-12
+
+- Changed the Content Security Policy to a default-deny subresource policy for
+  the asset-free hello page while retaining explicit form and framing rules.
+- Extended exact header tests, baseline checks, and security documentation for
+  the tightened fallback.
+
 ## 2026-06-10
 
 - Tightened Content Security Policy with explicit object, base URL,

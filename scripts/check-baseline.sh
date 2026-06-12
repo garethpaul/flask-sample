@@ -10,6 +10,7 @@ HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-basic-security-headers.md"
 FRAME_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-clickjacking-header.md"
 CSP_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-content-security-policy-header.md"
 CSP_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-10-content-security-policy-boundaries.md"
+CSP_DEFAULT_DENY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-content-security-default-deny-plan.md"
 PERMISSIONS_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-permissions-policy-header.md"
 HOST_SHAPE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-shape-validation.md"
 DEBUG_HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-loopback-debug-guard.md"
@@ -41,6 +42,7 @@ for path in \
   "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-09-content-security-policy-header.md" \
   "docs/plans/2026-06-10-content-security-policy-boundaries.md" \
+  "docs/plans/2026-06-12-001-fix-content-security-default-deny-plan.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -110,7 +112,8 @@ if ! grep -Fq "@app.after_request" "$ROOT_DIR/app.py" ||
   exit 1
 fi
 
-if ! grep -Fq "object-src 'none'" "$ROOT_DIR/app.py" ||
+if ! grep -Fq "default-src 'none'" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "object-src 'none'" "$ROOT_DIR/app.py" ||
   ! grep -Fq "base-uri 'none'" "$ROOT_DIR/app.py" ||
   ! grep -Fq "form-action 'self'" "$ROOT_DIR/app.py" ||
   ! grep -Fq "frame-ancestors 'none'" "$ROOT_DIR/app.py" ||
@@ -118,6 +121,19 @@ if ! grep -Fq "object-src 'none'" "$ROOT_DIR/app.py" ||
   printf '%s\n' "Flask responses must keep Content-Security-Policy coverage." >&2
   exit 1
 fi
+
+if ! grep -Fq "Content Security Default Deny" "$CSP_DEFAULT_DENY_PLAN" ||
+  ! grep -Fq "make check" "$CSP_DEFAULT_DENY_PLAN"; then
+  printf '%s\n' "Default-deny CSP plan must document repository verification." >&2
+  exit 1
+fi
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "default-deny subresource policy" "$document"; then
+    printf '%s\n' "$document must document the default-deny subresource policy." >&2
+    exit 1
+  fi
+done
 
 if ! grep -Fq "lint: check" "$ROOT_DIR/Makefile" ||
   ! grep -Fq "test:" "$ROOT_DIR/Makefile" ||
