@@ -501,12 +501,23 @@ plan = Path(sys.argv[1]).read_text()
 frontmatter = plan.split("---", 2)[1]
 statuses = re.findall(r"^status: .+$", frontmatter, flags=re.MULTILINE)
 verification = plan.split("## Verification Completed\n", 1)[-1]
+required = (
+    "31b4b6f562cd66dfa25fd2cd5b8aaca23d41b5f4",
+    "27436608774",
+    "27436618916",
+    "27436616718",
+)
 
 if (
     statuses != ["status: completed"]
     or "all Make gates" not in verification
     or "hostile constraints mutations" not in verification
-    or re.search(r"\b(?:pending|todo|tbd|not run)\b", verification, re.IGNORECASE)
+    or any(item not in verification for item in required)
+    or re.search(
+        r"\b(?:pending|todo|tbd|not run|will be appended|not final)\b",
+        verification,
+        re.IGNORECASE,
+    )
 ):
     raise SystemExit(
         "Python constraints plan must remain completed with actual verification recorded."

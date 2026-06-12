@@ -73,5 +73,8 @@ narrowing the sample's public compatibility declaration.
   compilation, and `git diff --check` are the canonical local verification.
 - Focused hostile constraints mutations cover graph drift, unconstrained
   installation, cache-key drift, documentation drift, and stale plan evidence.
-- Hosted run identifiers will be appended after the implementation head is
-  pushed; delivery is not final until both canonical events and CodeQL pass.
+- Implementation head `31b4b6f562cd66dfa25fd2cd5b8aaca23d41b5f4`
+  passed push Check run `27436608774`, pull-request Check run `27436618916`,
+  and CodeQL run `27436616718` for Actions and Python.
+- Pull request #6 was open, clean, and mergeable at that implementation head
+  with all nine hosted checks successful.
