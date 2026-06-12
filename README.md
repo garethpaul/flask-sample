@@ -62,6 +62,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - URL-shaped, path-like, and host-plus-port `FLASK_RUN_HOST` values fall back
   to `127.0.0.1`; set the port with `PORT`.
 - Invalid `PORT` values fall back to `5000`.
+- Requests trust loopback Host headers plus a validated non-wildcard
+  `FLASK_RUN_HOST`; unexpected Host headers receive a 400 response.
 
 ## Testing and Verification
 
@@ -76,6 +78,8 @@ opt-in rather than hardcoded and remains loopback-only when enabled. It also
 verifies `FLASK_DEBUG` value normalization before the opt-in check, the
 GET-only root route, and startup port parsing fallback for invalid local
 environment values. Blank or malformed host values also fall back to localhost.
+Flask 3.1 `TRUSTED_HOSTS` validation accepts loopback request hosts and a
+validated concrete bind host while excluding wildcard bind addresses.
 Responses include basic security headers for content sniffing, clickjacking
 protection, referrer policy, and a Content-Security-Policy with a default-deny
 subresource policy that also blocks plugin objects, base URL rewriting,
@@ -104,6 +108,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Debug mode is local-only. Do not expose the Werkzeug debugger on a public
   interface.
 - `FLASK_DEBUG` should only enable debug mode for loopback host bindings.
+- Keep Flask `TRUSTED_HOSTS` aligned with validated bind hosts, and do not trust
+  wildcard addresses as request Host values.
 - Keep response headers such as `X-Content-Type-Options` and `Referrer-Policy`
   in place when adding routes.
 - Keep `X-Frame-Options: DENY` in place unless a documented embedding use case
@@ -124,6 +130,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-09-flask-host-validation.md` for local host parsing
   guardrails.
 - See `docs/plans/2026-06-09-flask-host-shape-validation.md` for host shape
+  validation guardrails.
+- See `docs/plans/2026-06-12-flask-trusted-hosts.md` for request Host-header
   validation guardrails.
 - See `docs/plans/2026-06-09-flask-loopback-debug-guard.md` for loopback-only
   debug guardrails.

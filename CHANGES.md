@@ -10,6 +10,9 @@
   the asset-free hello page while retaining explicit form and framing rules.
 - Extended exact header tests, baseline checks, and security documentation for
   the tightened fallback.
+- Added Flask 3.1 `TRUSTED_HOSTS` validation for loopback and configured
+  non-wildcard hosts, with request-level rejection tests for unexpected Host
+  headers.
 
 ## 2026-06-10
 
