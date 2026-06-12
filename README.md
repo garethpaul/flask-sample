@@ -99,6 +99,8 @@ does not persist checkout credentials.
 Hosted installs also apply `constraints.txt` to freeze the reviewed Flask and
 transitive package versions across the matrix. The constraints preserve the
 public Flask range but do not authenticate downloaded artifacts with hashes.
+Hosted installation bootstraps exact `pip 26.1.2` before applying those files,
+avoiding a floating installer input across the Python matrix.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 

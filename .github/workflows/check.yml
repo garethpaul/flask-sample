@@ -37,7 +37,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip==26.1.2
           python -m pip install -r requirements.txt -c constraints.txt
 
       - name: Verify dependency consistency

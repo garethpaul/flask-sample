@@ -20,6 +20,7 @@ CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 FLASK_31_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-3-1-modernization.md"
 TRUSTED_HOSTS_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-trusted-hosts.md"
 CONSTRAINTS_PLAN="$ROOT_DIR/docs/plans/2026-06-12-python-dependency-constraints.md"
+PIP_BOOTSTRAP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-pip-bootstrap-pin.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -50,6 +51,7 @@ for path in \
   "docs/plans/2026-06-12-flask-3-1-modernization.md" \
   "docs/plans/2026-06-12-flask-trusted-hosts.md" \
   "docs/plans/2026-06-12-python-dependency-constraints.md" \
+  "docs/plans/2026-06-12-pip-bootstrap-pin.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -64,7 +66,7 @@ for path in \
 done
 
 "$PYTHON" -m py_compile "$ROOT_DIR/app.py" "$ROOT_DIR/tests/test_app.py"
-"$PYTHON" -m unittest discover -s "$ROOT_DIR/tests" -p "test*.py"
+(cd "$ROOT_DIR" && "$PYTHON" -m unittest discover -s tests -p "test*.py")
 
 if grep -Fq "app.debug = True" "$ROOT_DIR/app.py" ||
   grep -Fq "host='0.0.0.0'" "$ROOT_DIR/app.py" ||
@@ -228,6 +230,7 @@ if ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
   ! grep -Fq "timeout-minutes: 10" "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
   ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
+  ! grep -Fq "python -m pip install --upgrade pip==26.1.2" "$CI_WORKFLOW" ||
   ! grep -Fq "python -m pip install -r requirements.txt -c constraints.txt" "$CI_WORKFLOW" ||
   ! grep -Fq "cache-dependency-path:" "$CI_WORKFLOW" ||
   ! grep -Fq "constraints.txt" "$CI_WORKFLOW" ||
@@ -242,15 +245,39 @@ import sys
 from pathlib import Path
 
 workflow = Path(sys.argv[1]).read_text()
+bootstrap = "python -m pip install --upgrade pip==26.1.2"
 install = "python -m pip install -r requirements.txt -c constraints.txt"
 cache_block = """          cache-dependency-path: |
             requirements.txt
             constraints.txt"""
+if workflow.count(bootstrap) != 1:
+    raise SystemExit("GitHub Actions must bootstrap exactly one pinned pip version.")
+if "python -m pip install --upgrade pip\n" in workflow:
+    raise SystemExit("GitHub Actions must not resolve a floating pip upgrade.")
+if workflow.count("python -m pip install --upgrade pip") != 1:
+    raise SystemExit("GitHub Actions must not add duplicate or alternate pip bootstraps.")
 if workflow.count(install) != 1 or workflow.count(cache_block) != 1:
     raise SystemExit(
         "GitHub Actions must install once through constraints and cache both dependency files."
     )
 PY
+
+if ! grep -Fq "status: completed" "$PIP_BOOTSTRAP_PLAN" ||
+  ! grep -Fq "pip==26.1.2" "$PIP_BOOTSTRAP_PLAN" ||
+  ! grep -Fq "Local Make gates" "$PIP_BOOTSTRAP_PLAN" ||
+  ! grep -Fq "external-working-directory checker passed" "$PIP_BOOTSTRAP_PLAN" ||
+  ! grep -Fq "hostile mutations rejected" "$PIP_BOOTSTRAP_PLAN"; then
+  printf '%s\n' "Pip bootstrap plan must record completed status and verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "pip 26.1.2" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "pinned installer bootstrap" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "exact pip bootstrap" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "Pinned the hosted pip bootstrap" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Repository guidance must document the pinned pip bootstrap boundary." >&2
+  exit 1
+fi
 
 if [ "$(grep -Ec '^[[:space:]]+(-[[:space:]]+)?uses: actions/checkout@' "$CI_WORKFLOW")" -ne 1 ]; then
   printf '%s\n' "GitHub Actions must contain exactly one checkout step." >&2

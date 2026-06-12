@@ -72,6 +72,7 @@ Next priorities:
 - Keep unused browser capabilities disabled unless the sample gains a feature
   that needs them
 - Keep the hosted CI workflow aligned with `make check`
+- Keep the exact pip bootstrap compatible with every hosted Python version
 
 Contribution rules:
 

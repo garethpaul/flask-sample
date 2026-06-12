@@ -65,6 +65,9 @@ GitHub Actions applies the exact versions in `constraints.txt` on Python 3.10,
 3.12, and 3.14 while `requirements.txt` retains the supported Flask 3.1 range.
 This freezes reviewed version resolution; it is not a hash lock and does not
 authenticate package artifacts.
+The hosted workflow also uses a pinned installer bootstrap. Keep that version
+explicit and review compatibility across the complete Python matrix when it is
+updated.
 
 ## Safe Research Guidelines
 
