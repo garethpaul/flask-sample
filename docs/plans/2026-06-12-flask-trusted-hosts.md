@@ -43,3 +43,22 @@ https://flask.palletsprojects.com/en/stable/web-security/#host-header-validation
 - `make check`
 - `git diff --check`
 - GitHub Actions on Python 3.10, 3.12, and 3.14
+
+## Work Completed
+
+- Added loopback defaults plus validated custom hostname and IP support without
+  trusting wildcard bind addresses.
+- Configured Flask 3.1 `TRUSTED_HOSTS` before request routing and added focused
+  tests for accepted and rejected Host headers.
+- Updated the security documentation and offline baseline for the Host-header
+  boundary.
+
+## Verification Completed
+
+- An isolated Flask 3.1.3 / Python 3.12 environment passed all 14 tests, all
+  four Make gates, shell syntax, and `git diff --check`.
+- Implementation push run `27392343275` and pull-request run `27392347000`
+  passed the Python 3.10, 3.12, and 3.14 matrix at commit
+  `41ef328e56d46d6432e92a5a4afc342c616e2007`.
+- Post-merge push run `27392361353` and CodeQL run `27402320555` passed at
+  default-branch merge commit `6f3570e589e7ba90d80aaa762c31a4c338d34ac2`.
