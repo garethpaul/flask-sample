@@ -44,6 +44,9 @@ Helpful reports include:
   steps without a separate security review.
 - Dependency manifest detected: `requirements.txt`. Review dependency range
   changes deliberately and keep hosted compatibility checks green.
+- The supported framework line is Flask `>=3.1.3,<3.2`; the lower bound keeps
+  the 3.1.3 security fix while the upper bound requires deliberate review
+  before adopting a later feature series.
 
 ## Service and API Notes
 

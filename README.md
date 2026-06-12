@@ -33,6 +33,7 @@ Additional scan context:
 
 - Git
 - Python 3
+- Flask 3.1.3 or a newer compatible 3.1 release
 
 ### Setup
 
@@ -85,7 +86,9 @@ The `make lint`, `make test`, and `make build` aliases run the same local
 baseline or unit tests while this sample has no narrower installed gates.
 GitHub Actions installs `requirements.txt`, verifies dependency consistency,
 and runs `make check` on Python 3.10, 3.12, and 3.14 for pull requests and
-pushes.
+pushes. The runtime requirement stays within Flask 3.1 (`>=3.1.3,<3.2`) so the
+sample receives current security fixes without silently crossing a future
+feature-series boundary.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 

@@ -17,6 +17,7 @@ DEBUG_HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-loopback-debug-guard.md"
 DEBUG_VALUE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-debug-value-normalization.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
+FLASK_31_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-3-1-modernization.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -43,6 +44,7 @@ for path in \
   "docs/plans/2026-06-09-content-security-policy-header.md" \
   "docs/plans/2026-06-10-content-security-policy-boundaries.md" \
   "docs/plans/2026-06-12-001-fix-content-security-default-deny-plan.md" \
+  "docs/plans/2026-06-12-flask-3-1-modernization.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -180,8 +182,10 @@ if ! grep -Fq "test_blank_host_values_fall_back_to_localhost" "$ROOT_DIR/tests/t
   exit 1
 fi
 
-if ! grep -Fq "Flask>=2.2,<3" "$ROOT_DIR/requirements.txt"; then
-  printf '%s\n' "requirements.txt must pin the Flask compatibility range." >&2
+if ! grep -Fxq "Flask>=3.1.3,<3.2" "$ROOT_DIR/requirements.txt" ||
+  ! grep -Fq "test_supported_flask_version_is_installed" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq 'version("Flask")' "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "requirements.txt and tests must require the patched Flask 3.1 line." >&2
   exit 1
 fi
 
@@ -242,6 +246,12 @@ fi
 
 if ! grep -Fq "status: completed" "$PLAN"; then
   printf '%s\n' "Plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$FLASK_31_PLAN" ||
+  ! grep -Fq "make check" "$FLASK_31_PLAN"; then
+  printf '%s\n' "Flask 3.1 modernization plan must remain completed with verification recorded." >&2
   exit 1
 fi
 

@@ -1,4 +1,5 @@
 import unittest
+from importlib.metadata import version
 
 from app import app, debug_allowed_for_host, debug_enabled, host_name, port_number
 
@@ -6,6 +7,12 @@ from app import app, debug_allowed_for_host, debug_enabled, host_name, port_numb
 class FlaskSampleTests(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
+
+    def test_supported_flask_version_is_installed(self):
+        release = tuple(int(part) for part in version("Flask").split(".")[:3])
+
+        self.assertGreaterEqual(release, (3, 1, 3))
+        self.assertLess(release, (3, 2, 0))
 
     def test_root_get_renders_hello_template(self):
         response = self.client.get("/")
