@@ -2,6 +2,9 @@
 
 ## 2026-06-12
 
+- Added a reviewed seven-package constraints graph shared by Python 3.10,
+  3.12, and 3.14, wired it into hosted installs and pip cache invalidation, and
+  added exact dependency, workflow, documentation, and plan contracts.
 - Upgraded the runtime contract from legacy Flask 2.x compatibility to the
   patched Flask 3.1 line (`>=3.1.3,<3.2`).
 - Added installed-version, dependency-range, route, and security-header

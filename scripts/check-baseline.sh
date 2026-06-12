@@ -19,6 +19,7 @@ CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 FLASK_31_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-3-1-modernization.md"
 TRUSTED_HOSTS_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-trusted-hosts.md"
+CONSTRAINTS_PLAN="$ROOT_DIR/docs/plans/2026-06-12-python-dependency-constraints.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -38,6 +39,7 @@ for path in \
   "SECURITY.md" \
   "VISION.md" \
   "app.py" \
+  "constraints.txt" \
   "requirements.txt" \
   "templates/hello.html" \
   "tests/test_app.py" \
@@ -47,6 +49,7 @@ for path in \
   "docs/plans/2026-06-12-001-fix-content-security-default-deny-plan.md" \
   "docs/plans/2026-06-12-flask-3-1-modernization.md" \
   "docs/plans/2026-06-12-flask-trusted-hosts.md" \
+  "docs/plans/2026-06-12-python-dependency-constraints.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -205,18 +208,49 @@ if ! grep -Fxq "Flask>=3.1.3,<3.2" "$ROOT_DIR/requirements.txt" ||
   exit 1
 fi
 
+expected_constraints='# Reviewed CI resolution for Python 3.10, 3.12, and 3.14.
+blinker==1.9.0
+click==8.4.1
+Flask==3.1.3
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+Werkzeug==3.1.8'
+actual_constraints=$(cat "$ROOT_DIR/constraints.txt")
+if [ "$actual_constraints" != "$expected_constraints" ]; then
+  printf '%s\n' "constraints.txt must match the reviewed cross-version Flask graph exactly." >&2
+  exit 1
+fi
+
 if ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
   ! grep -Fq "cancel-in-progress: true" "$CI_WORKFLOW" ||
   ! grep -Fq "runs-on: ubuntu-24.04" "$CI_WORKFLOW" ||
   ! grep -Fq "timeout-minutes: 10" "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
   ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
-  ! grep -Fq "python -m pip install -r requirements.txt" "$CI_WORKFLOW" ||
+  ! grep -Fq "python -m pip install -r requirements.txt -c constraints.txt" "$CI_WORKFLOW" ||
+  ! grep -Fq "cache-dependency-path:" "$CI_WORKFLOW" ||
+  ! grep -Fq "constraints.txt" "$CI_WORKFLOW" ||
   ! grep -Fq "python -m pip check" "$CI_WORKFLOW" ||
   ! grep -Fq "make check" "$CI_WORKFLOW"; then
   printf '%s\n' "GitHub Actions must keep the pinned multi-version Flask check contract." >&2
   exit 1
 fi
+
+python3 - "$CI_WORKFLOW" <<'PY'
+import sys
+from pathlib import Path
+
+workflow = Path(sys.argv[1]).read_text()
+install = "python -m pip install -r requirements.txt -c constraints.txt"
+cache_block = """          cache-dependency-path: |
+            requirements.txt
+            constraints.txt"""
+if workflow.count(install) != 1 or workflow.count(cache_block) != 1:
+    raise SystemExit(
+        "GitHub Actions must install once through constraints and cache both dependency files."
+    )
+PY
 
 if [ "$(grep -Ec '^[[:space:]]+(-[[:space:]]+)?uses: actions/checkout@' "$CI_WORKFLOW")" -ne 1 ]; then
   printf '%s\n' "GitHub Actions must contain exactly one checkout step." >&2
@@ -302,7 +336,7 @@ if ! grep -Fq "does not persist checkout credentials" "$ROOT_DIR/README.md"; the
 fi
 
 if ! grep -Fq "read-only repository permissions" "$ROOT_DIR/SECURITY.md" ||
-  ! grep -Fq 'Dependency manifest detected: `requirements.txt`' "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq 'Dependency manifests detected: `requirements.txt` and `constraints.txt`.' "$ROOT_DIR/SECURITY.md" ||
   ! grep -Fq "Python 3.10, 3.12, and 3.14" "$ROOT_DIR/CHANGES.md" ||
   ! grep -Fq "docs/plans/2026-06-10-ci-baseline.md" "$ROOT_DIR/README.md"; then
   printf '%s\n' "Project docs must record the hosted Python compatibility baseline." >&2
@@ -318,7 +352,8 @@ if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   ! grep -Fq "Blank \`FLASK_RUN_HOST\` values fall back to \`127.0.0.1\`" "$ROOT_DIR/README.md" ||
   ! grep -Fq "GET-only" "$ROOT_DIR/README.md" ||
   ! grep -Fq "Permissions-Policy" "$ROOT_DIR/README.md" ||
-  ! grep -Fq "requirements.txt" "$ROOT_DIR/README.md"; then
+  ! grep -Fq "requirements.txt" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "constraints.txt" "$ROOT_DIR/README.md"; then
   printf '%s\n' "README must document setup, debug posture, GET-only route behavior, PORT fallback, and verification." >&2
   exit 1
 fi
@@ -454,6 +489,27 @@ if (
 ):
     raise SystemExit(
         "Flask trusted-hosts plan must remain completed with actual verification recorded."
+    )
+PY
+
+python3 - "$CONSTRAINTS_PLAN" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+plan = Path(sys.argv[1]).read_text()
+frontmatter = plan.split("---", 2)[1]
+statuses = re.findall(r"^status: .+$", frontmatter, flags=re.MULTILINE)
+verification = plan.split("## Verification Completed\n", 1)[-1]
+
+if (
+    statuses != ["status: completed"]
+    or "all Make gates" not in verification
+    or "hostile constraints mutations" not in verification
+    or re.search(r"\b(?:pending|todo|tbd|not run)\b", verification, re.IGNORECASE)
+):
+    raise SystemExit(
+        "Python constraints plan must remain completed with actual verification recorded."
     )
 PY
 

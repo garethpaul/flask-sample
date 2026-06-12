@@ -14,6 +14,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 - `README.md` - project overview and local usage notes
 - `app.py`
 - `requirements.txt` - Flask dependency compatibility range
+- `constraints.txt` - reviewed exact dependency graph used by CI
 - `Makefile` and `scripts/check-baseline.sh` - local verification commands
 - `SECURITY.md` - security reporting and disclosure guidance
 - `templates` - source or example code
@@ -23,7 +24,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 Additional scan context:
 
 - Source directories: templates
-- Dependency and build manifests: none detected
+- Dependency and build manifests: `requirements.txt`, `constraints.txt`
 - Entry points or build surfaces: app.py
 - Test-looking files: no obvious test files detected
 
@@ -42,7 +43,7 @@ git clone https://github.com/garethpaul/flask-sample.git
 cd flask-sample
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt -c constraints.txt
 ```
 
 The setup commands above are derived from repository files. Legacy mobile, Python, or JavaScript samples may require older SDKs or package versions than a modern workstation uses by default.
@@ -94,6 +95,10 @@ pushes. The runtime requirement stays within Flask 3.1 (`>=3.1.3,<3.2`) so the
 sample receives current security fixes without silently crossing a future
 feature-series boundary. The workflow uses read-only repository permissions and
 does not persist checkout credentials.
+
+Hosted installs also apply `constraints.txt` to freeze the reviewed Flask and
+transitive package versions across the matrix. The constraints preserve the
+public Flask range but do not authenticate downloaded artifacts with hashes.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
