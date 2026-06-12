@@ -10,9 +10,13 @@ pull requests and pushes.
 
 ## Changes
 
-- Added `.github/workflows/check.yml` for GitHub Actions.
-- Configured the workflow to install `requirements.txt` on Python 3.12.
-- Wired the workflow to run `make check`, matching the local verification path.
+- Added a least-privilege GitHub Actions workflow for pushes, pull requests,
+  and manual runs.
+- Pinned checkout and Python setup actions by commit, disabled persisted
+  checkout credentials, and bounded superseded runs with concurrency
+  cancellation and a timeout.
+- Installed `requirements.txt` and ran `pip check` plus `make check` on Python
+  3.10, 3.12, and 3.14.
 - Extended `scripts/check-baseline.sh` and project docs so the CI gate remains
   part of the maintained baseline.
 
@@ -20,3 +24,5 @@ pull requests and pushes.
 
 - `make check`
 - `git diff --check`
+- Workflow YAML parse
+- Hosted Python 3.10, 3.12, and 3.14 GitHub Actions jobs

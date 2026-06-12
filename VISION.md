@@ -41,19 +41,22 @@ Current baseline:
 - Invalid `PORT` values fall back to 5000 rather than crashing local startup.
 - Responses include basic security headers for content sniffing, clickjacking
   protection, and referrer policy.
-- Responses include a minimal Content-Security-Policy for same-origin assets
-  and no frame ancestors.
+- Responses include a default-deny subresource policy with explicit object,
+  base URL, form-action, and framing boundaries.
 - Responses include a Permissions-Policy that disables unused camera,
   microphone, and geolocation capabilities.
 - `make lint`, `make test`, and `make build` run the local baseline or unit
   tests while this sample has no narrower installed gates.
-- GitHub Actions runs `make check` on pull requests and pushes so the hosted
-  gate matches local verification.
+- GitHub Actions runs dependency consistency checks and `make check` on Python
+  3.10, 3.12, and 3.14 without persisting checkout credentials, so hosted
+  verification covers the declared Flask range.
+- The declared runtime uses the patched Flask 3.1 line (`>=3.1.3,<3.2`) and a
+  route test verifies the installed framework remains inside that boundary.
 - Python environments, bytecode, and `.env` files are ignored.
 
 Next priorities:
 
-- Keep README setup commands and dependency requirements current
+- Keep README setup commands and the maintained Flask 3.1 requirement current
 - Add more route tests only when route behavior grows
 - Keep local port behavior documented as startup configuration evolves
 - Keep local host parsing documented as startup configuration evolves

@@ -9,12 +9,15 @@ HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-validation.md"
 HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-basic-security-headers.md"
 FRAME_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-clickjacking-header.md"
 CSP_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-content-security-policy-header.md"
+CSP_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-10-content-security-policy-boundaries.md"
+CSP_DEFAULT_DENY_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-content-security-default-deny-plan.md"
 PERMISSIONS_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-09-permissions-policy-header.md"
 HOST_SHAPE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-host-shape-validation.md"
 DEBUG_HOST_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-loopback-debug-guard.md"
 DEBUG_VALUE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-debug-value-normalization.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
+FLASK_31_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-3-1-modernization.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -39,6 +42,9 @@ for path in \
   "tests/test_app.py" \
   "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-09-content-security-policy-header.md" \
+  "docs/plans/2026-06-10-content-security-policy-boundaries.md" \
+  "docs/plans/2026-06-12-001-fix-content-security-default-deny-plan.md" \
+  "docs/plans/2026-06-12-flask-3-1-modernization.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -108,11 +114,28 @@ if ! grep -Fq "@app.after_request" "$ROOT_DIR/app.py" ||
   exit 1
 fi
 
-if ! grep -Fq "default-src 'self'; frame-ancestors 'none'" "$ROOT_DIR/app.py" ||
+if ! grep -Fq "default-src 'none'" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "object-src 'none'" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "base-uri 'none'" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "form-action 'self'" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "frame-ancestors 'none'" "$ROOT_DIR/app.py" ||
   ! grep -Fq "test_root_get_sets_content_security_policy" "$ROOT_DIR/tests/test_app.py"; then
   printf '%s\n' "Flask responses must keep Content-Security-Policy coverage." >&2
   exit 1
 fi
+
+if ! grep -Fq "Content Security Default Deny" "$CSP_DEFAULT_DENY_PLAN" ||
+  ! grep -Fq "make check" "$CSP_DEFAULT_DENY_PLAN"; then
+  printf '%s\n' "Default-deny CSP plan must document repository verification." >&2
+  exit 1
+fi
+
+for document in "$ROOT_DIR/README.md" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fq "default-deny subresource policy" "$document"; then
+    printf '%s\n' "$document must document the default-deny subresource policy." >&2
+    exit 1
+  fi
+done
 
 if ! grep -Fq "lint: check" "$ROOT_DIR/Makefile" ||
   ! grep -Fq "test:" "$ROOT_DIR/Makefile" ||
@@ -159,16 +182,114 @@ if ! grep -Fq "test_blank_host_values_fall_back_to_localhost" "$ROOT_DIR/tests/t
   exit 1
 fi
 
-if ! grep -Fq "Flask>=2.2,<3" "$ROOT_DIR/requirements.txt"; then
-  printf '%s\n' "requirements.txt must pin the Flask compatibility range." >&2
+if ! grep -Fxq "Flask>=3.1.3,<3.2" "$ROOT_DIR/requirements.txt" ||
+  ! grep -Fq "test_supported_flask_version_is_installed" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq 'version("Flask")' "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "requirements.txt and tests must require the patched Flask 3.1 line." >&2
   exit 1
 fi
 
-if ! grep -Fq "actions/setup-python@v5" "$CI_WORKFLOW" ||
-  ! grep -Fq 'python-version: "3.12"' "$CI_WORKFLOW" ||
+if ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
+  ! grep -Fq "cancel-in-progress: true" "$CI_WORKFLOW" ||
+  ! grep -Fq "runs-on: ubuntu-24.04" "$CI_WORKFLOW" ||
+  ! grep -Fq "timeout-minutes: 10" "$CI_WORKFLOW" ||
+  ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
+  ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
   ! grep -Fq "python -m pip install -r requirements.txt" "$CI_WORKFLOW" ||
+  ! grep -Fq "python -m pip check" "$CI_WORKFLOW" ||
   ! grep -Fq "make check" "$CI_WORKFLOW"; then
-  printf '%s\n' "GitHub Actions workflow must run the Flask make check baseline on Python 3.12." >&2
+  printf '%s\n' "GitHub Actions must keep the pinned multi-version Flask check contract." >&2
+  exit 1
+fi
+
+if [ "$(grep -Ec '^[[:space:]]+(-[[:space:]]+)?uses: actions/checkout@' "$CI_WORKFLOW")" -ne 1 ]; then
+  printf '%s\n' "GitHub Actions must contain exactly one checkout step." >&2
+  exit 1
+fi
+
+if ! awk '
+  function finish_step() {
+    if (checkout) {
+      checkout_count++
+      if (persist_credentials) {
+        secure_checkout_count++
+      }
+    }
+    checkout = 0
+    with_block = 0
+    persist_credentials = 0
+  }
+
+  /^      - / {
+    finish_step()
+  }
+
+  /^        uses: actions\/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10([[:space:]]+#.*)?$/ {
+    checkout = 1
+  }
+
+  /^      - uses: actions\/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10([[:space:]]+#.*)?$/ {
+    checkout = 1
+  }
+
+  checkout && /^        with:$/ {
+    with_block = 1
+  }
+
+  checkout && with_block && /^          persist-credentials: false$/ {
+    persist_credentials = 1
+  }
+
+  END {
+    finish_step()
+    exit !(checkout_count == 1 && secure_checkout_count == 1)
+  }
+' "$CI_WORKFLOW"; then
+  printf '%s\n' "The pinned checkout step must disable persisted credentials." >&2
+  exit 1
+fi
+
+if ! awk '
+  /^permissions:$/ {
+    permissions_count++
+    in_permissions = 1
+    next
+  }
+
+  in_permissions && /^[^[:space:]]/ {
+    in_permissions = 0
+  }
+
+  in_permissions && /^  contents: read$/ {
+    contents_read++
+    next
+  }
+
+  in_permissions && /^  [[:alnum:]_-]+:/ {
+    unexpected_permission++
+  }
+
+  END {
+    exit !(permissions_count == 1 && contents_read == 1 && unexpected_permission == 0)
+  }
+' "$CI_WORKFLOW" ||
+  grep -Eq '^[[:space:]]+permissions:' "$CI_WORKFLOW" ||
+  grep -Eq '^[[:space:]]*permissions:[[:space:]]*write-all([[:space:]]*(#.*)?)?$' "$CI_WORKFLOW" ||
+  grep -Eq '^[[:space:]]+[[:alnum:]_-]+:[[:space:]]*write([[:space:]]*(#.*)?)?$' "$CI_WORKFLOW"; then
+  printf '%s\n' "GitHub Actions must grant only top-level read access to repository contents." >&2
+  exit 1
+fi
+
+if ! grep -Fq "does not persist checkout credentials" "$ROOT_DIR/README.md"; then
+  printf '%s\n' "README must document the credential-free checkout boundary." >&2
+  exit 1
+fi
+
+if ! grep -Fq "read-only repository permissions" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq 'Dependency manifest detected: `requirements.txt`' "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "Python 3.10, 3.12, and 3.14" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "docs/plans/2026-06-10-ci-baseline.md" "$ROOT_DIR/README.md"; then
+  printf '%s\n' "Project docs must record the hosted Python compatibility baseline." >&2
   exit 1
 fi
 
@@ -209,6 +330,12 @@ if ! grep -Fq "status: completed" "$PLAN"; then
   exit 1
 fi
 
+if ! grep -Fq "status: completed" "$FLASK_31_PLAN" ||
+  ! grep -Fq "make check" "$FLASK_31_PLAN"; then
+  printf '%s\n' "Flask 3.1 modernization plan must remain completed with verification recorded." >&2
+  exit 1
+fi
+
 if ! grep -Fq "status: completed" "$GET_ONLY_PLAN"; then
   printf '%s\n' "GET-only route plan must be marked completed." >&2
   exit 1
@@ -236,6 +363,11 @@ fi
 
 if ! grep -Fq "status: completed" "$CSP_HEADERS_PLAN"; then
   printf '%s\n' "Content-Security-Policy header plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$CSP_BOUNDARY_PLAN"; then
+  printf '%s\n' "Content-Security-Policy boundary plan must be marked completed." >&2
   exit 1
 fi
 

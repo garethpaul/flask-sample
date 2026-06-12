@@ -1,9 +1,24 @@
 # Changes
 
+## 2026-06-12
+
+- Upgraded the runtime contract from legacy Flask 2.x compatibility to the
+  patched Flask 3.1 line (`>=3.1.3,<3.2`).
+- Added installed-version, dependency-range, route, and security-header
+  regressions across the existing Python 3.10, 3.12, and 3.14 matrix.
+- Changed the Content Security Policy to a default-deny subresource policy for
+  the asset-free hello page while retaining explicit form and framing rules.
+- Extended exact header tests, baseline checks, and security documentation for
+  the tightened fallback.
+
 ## 2026-06-10
 
-- Added a GitHub Actions workflow that installs Flask dependencies and runs the
-  local `make check` baseline for pushes and pull requests.
+- Tightened Content Security Policy with explicit object, base URL,
+  form-action, and frame-ancestor boundaries.
+- Added a pinned, least-privilege GitHub Actions matrix that verifies
+  dependencies and runs `make check` on Python 3.10, 3.12, and 3.14.
+- Disabled persisted checkout credentials and added structural workflow
+  contracts for the read-only permissions boundary.
 
 ## 2026-06-09
 

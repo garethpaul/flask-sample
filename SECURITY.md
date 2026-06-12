@@ -30,15 +30,24 @@ Helpful reports include:
   not exposed on public host bindings.
 - `FLASK_DEBUG` values should be trimmed and case-normalized before checking
   the opt-in allowlist.
-- Response headers should keep the minimal Content-Security-Policy unless a documented asset or embedding need changes it.
+- Response headers should keep explicit object, base URL, form-action, and
+  frame-ancestor Content-Security-Policy boundaries unless a documented need
+  changes them.
+- Keep the default-deny subresource policy unless a reviewed template change
+  adds a narrow CSP exception for a required asset type.
 - Local host binding should reject URL-shaped, path-like, or host-plus-port
   values and keep port selection in `PORT`.
 - Response headers should keep unused browser capabilities disabled with
   `Permissions-Policy` unless a documented feature needs them.
-- GitHub Actions runs the same `make check` baseline as local development; do
-  not add secrets or deployment steps to that workflow without a separate
+- GitHub Actions uses read-only repository permissions and runs the same
+  `make check` baseline as local development without persisting checkout
+  credentials; do not add secrets or deployment steps without a separate
   security review.
-- No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
+- Dependency manifest detected: `requirements.txt`. Review dependency range
+  changes deliberately and keep hosted compatibility checks green.
+- The supported framework line is Flask `>=3.1.3,<3.2`; the lower bound keeps
+  the 3.1.3 security fix while the upper bound requires deliberate review
+before adopting a later feature series.
 
 ## Service and API Notes
 

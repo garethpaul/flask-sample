@@ -33,6 +33,7 @@ Additional scan context:
 
 - Git
 - Python 3
+- Flask 3.1.3 or a newer compatible 3.1 release
 
 ### Setup
 
@@ -76,14 +77,19 @@ verifies `FLASK_DEBUG` value normalization before the opt-in check, the
 GET-only root route, and startup port parsing fallback for invalid local
 environment values. Blank or malformed host values also fall back to localhost.
 Responses include basic security headers for content sniffing, clickjacking
-protection, referrer policy, and a minimal Content-Security-Policy. It also
-keeps a `Permissions-Policy` header that disables unused camera, microphone,
-and geolocation capabilities.
+protection, referrer policy, and a Content-Security-Policy with a default-deny
+subresource policy that also blocks plugin objects, base URL rewriting,
+cross-origin form targets, and framing. It keeps a `Permissions-Policy` header
+that disables unused camera, microphone, and geolocation capabilities.
 
 The `make lint`, `make test`, and `make build` aliases run the same local
 baseline or unit tests while this sample has no narrower installed gates.
-GitHub Actions runs the same `make check` baseline on pull requests and pushes
-after installing `requirements.txt`.
+GitHub Actions installs `requirements.txt`, verifies dependency consistency,
+and runs `make check` on Python 3.10, 3.12, and 3.14 for pull requests and
+pushes. The runtime requirement stays within Flask 3.1 (`>=3.1.3,<3.2`) so the
+sample receives current security fixes without silently crossing a future
+feature-series boundary. The workflow uses read-only repository permissions and
+does not persist checkout credentials.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -102,8 +108,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   in place when adding routes.
 - Keep `X-Frame-Options: DENY` in place unless a documented embedding use case
   is added.
-- Keep the minimal Content-Security-Policy in place when adding new templates,
-  routes, or external assets.
+- Keep the default-deny subresource policy in place when adding new templates
+  or routes, and add narrow CSP directives alongside any deliberate assets.
 - Keep the `Permissions-Policy` header in place unless a documented browser
   capability is intentionally added.
 
