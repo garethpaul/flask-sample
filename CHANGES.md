@@ -17,6 +17,8 @@
   form-action, and frame-ancestor boundaries.
 - Added a pinned, least-privilege GitHub Actions matrix that verifies
   dependencies and runs `make check` on Python 3.10, 3.12, and 3.14.
+- Disabled persisted checkout credentials and added structural workflow
+  contracts for the read-only permissions boundary.
 
 ## 2026-06-09
 

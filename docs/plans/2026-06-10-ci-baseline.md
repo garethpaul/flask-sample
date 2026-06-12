@@ -12,8 +12,9 @@ pull requests and pushes.
 
 - Added a least-privilege GitHub Actions workflow for pushes, pull requests,
   and manual runs.
-- Pinned checkout and Python setup actions by commit and bounded superseded
-  runs with concurrency cancellation and a timeout.
+- Pinned checkout and Python setup actions by commit, disabled persisted
+  checkout credentials, and bounded superseded runs with concurrency
+  cancellation and a timeout.
 - Installed `requirements.txt` and ran `pip check` plus `make check` on Python
   3.10, 3.12, and 3.14.
 - Extended `scripts/check-baseline.sh` and project docs so the CI gate remains

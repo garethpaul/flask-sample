@@ -190,17 +190,98 @@ if ! grep -Fxq "Flask>=3.1.3,<3.2" "$ROOT_DIR/requirements.txt" ||
 fi
 
 if ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
-  ! grep -Fq "contents: read" "$CI_WORKFLOW" ||
   ! grep -Fq "cancel-in-progress: true" "$CI_WORKFLOW" ||
   ! grep -Fq "runs-on: ubuntu-24.04" "$CI_WORKFLOW" ||
   ! grep -Fq "timeout-minutes: 10" "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
-  ! grep -Fq "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" "$CI_WORKFLOW" ||
   ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
   ! grep -Fq "python -m pip install -r requirements.txt" "$CI_WORKFLOW" ||
   ! grep -Fq "python -m pip check" "$CI_WORKFLOW" ||
   ! grep -Fq "make check" "$CI_WORKFLOW"; then
   printf '%s\n' "GitHub Actions must keep the pinned multi-version Flask check contract." >&2
+  exit 1
+fi
+
+if [ "$(grep -Ec '^[[:space:]]+(-[[:space:]]+)?uses: actions/checkout@' "$CI_WORKFLOW")" -ne 1 ]; then
+  printf '%s\n' "GitHub Actions must contain exactly one checkout step." >&2
+  exit 1
+fi
+
+if ! awk '
+  function finish_step() {
+    if (checkout) {
+      checkout_count++
+      if (persist_credentials) {
+        secure_checkout_count++
+      }
+    }
+    checkout = 0
+    with_block = 0
+    persist_credentials = 0
+  }
+
+  /^      - / {
+    finish_step()
+  }
+
+  /^        uses: actions\/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10([[:space:]]+#.*)?$/ {
+    checkout = 1
+  }
+
+  /^      - uses: actions\/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10([[:space:]]+#.*)?$/ {
+    checkout = 1
+  }
+
+  checkout && /^        with:$/ {
+    with_block = 1
+  }
+
+  checkout && with_block && /^          persist-credentials: false$/ {
+    persist_credentials = 1
+  }
+
+  END {
+    finish_step()
+    exit !(checkout_count == 1 && secure_checkout_count == 1)
+  }
+' "$CI_WORKFLOW"; then
+  printf '%s\n' "The pinned checkout step must disable persisted credentials." >&2
+  exit 1
+fi
+
+if ! awk '
+  /^permissions:$/ {
+    permissions_count++
+    in_permissions = 1
+    next
+  }
+
+  in_permissions && /^[^[:space:]]/ {
+    in_permissions = 0
+  }
+
+  in_permissions && /^  contents: read$/ {
+    contents_read++
+    next
+  }
+
+  in_permissions && /^  [[:alnum:]_-]+:/ {
+    unexpected_permission++
+  }
+
+  END {
+    exit !(permissions_count == 1 && contents_read == 1 && unexpected_permission == 0)
+  }
+' "$CI_WORKFLOW" ||
+  grep -Eq '^[[:space:]]+permissions:' "$CI_WORKFLOW" ||
+  grep -Eq '^[[:space:]]*permissions:[[:space:]]*write-all([[:space:]]*(#.*)?)?$' "$CI_WORKFLOW" ||
+  grep -Eq '^[[:space:]]+[[:alnum:]_-]+:[[:space:]]*write([[:space:]]*(#.*)?)?$' "$CI_WORKFLOW"; then
+  printf '%s\n' "GitHub Actions must grant only top-level read access to repository contents." >&2
+  exit 1
+fi
+
+if ! grep -Fq "does not persist checkout credentials" "$ROOT_DIR/README.md"; then
+  printf '%s\n' "README must document the credential-free checkout boundary." >&2
   exit 1
 fi
 

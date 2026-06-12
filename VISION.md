@@ -48,7 +48,8 @@ Current baseline:
 - `make lint`, `make test`, and `make build` run the local baseline or unit
   tests while this sample has no narrower installed gates.
 - GitHub Actions runs dependency consistency checks and `make check` on Python
-  3.10, 3.12, and 3.14 so hosted verification covers the declared Flask range.
+  3.10, 3.12, and 3.14 without persisting checkout credentials, so hosted
+  verification covers the declared Flask range.
 - The declared runtime uses the patched Flask 3.1 line (`>=3.1.3,<3.2`) and a
   route test verifies the installed framework remains inside that boundary.
 - Python environments, bytecode, and `.env` files are ignored.
