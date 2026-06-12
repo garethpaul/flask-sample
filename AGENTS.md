@@ -17,7 +17,7 @@ default response headers.
 
 ## Development commands
 
-- Install dependencies: `python3 -m pip install -r requirements.txt`
+- Install dependencies: `python3 -m pip install -r requirements.txt -c constraints.txt`
 - Full baseline: `make check`
 - Lint/static checks: `make lint`
 - Tests: `make test`
@@ -28,6 +28,8 @@ default response headers.
 
 - Support the declared Flask `>=3.1.3,<3.2` range and Python 3.10, 3.12, and
   3.14 compatibility matrix.
+- Keep `constraints.txt` aligned with the reviewed CI graph without narrowing
+  the compatibility range in `requirements.txt`.
 - Prefer dependency-free tests or stdlib checks when legacy packages are unavailable.
 
 ## Testing guidance
