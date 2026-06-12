@@ -1,7 +1,14 @@
 import unittest
 from importlib.metadata import version
 
-from app import app, debug_allowed_for_host, debug_enabled, host_name, port_number
+from app import (
+    app,
+    debug_allowed_for_host,
+    debug_enabled,
+    host_name,
+    port_number,
+    trusted_hosts,
+)
 
 
 class FlaskSampleTests(unittest.TestCase):
@@ -53,6 +60,39 @@ class FlaskSampleTests(unittest.TestCase):
         response = self.client.post("/")
 
         self.assertEqual(405, response.status_code)
+
+    def test_loopback_host_headers_are_trusted(self):
+        for base_url in (
+            "http://localhost:5000",
+            "http://127.0.0.1:5000",
+            "http://[::1]:5000",
+        ):
+            with self.subTest(base_url=base_url):
+                response = self.client.get("/", base_url=base_url)
+                self.assertEqual(200, response.status_code)
+
+    def test_untrusted_host_header_is_rejected(self):
+        for base_url in ("http://attacker.example", "http://0.0.0.0:5000"):
+            with self.subTest(base_url=base_url):
+                response = self.client.get("/", base_url=base_url)
+                self.assertEqual(400, response.status_code)
+                self.assertEqual(
+                    "nosniff",
+                    response.headers.get("X-Content-Type-Options"),
+                )
+
+    def test_trusted_hosts_include_validated_non_wildcard_bind_host(self):
+        self.assertEqual(
+            ["localhost", "127.0.0.1", "[::1]"],
+            trusted_hosts("0.0.0.0"),
+        )
+        self.assertEqual(
+            ["localhost", "127.0.0.1", "[::1]"],
+            trusted_hosts("::"),
+        )
+        self.assertIn("example.com", trusted_hosts("example.com"))
+        self.assertIn("[2001:db8::1]", trusted_hosts("2001:db8::1"))
+        self.assertEqual(trusted_hosts(), app.config["TRUSTED_HOSTS"])
 
     def test_debug_flag_is_opt_in(self):
         self.assertFalse(debug_enabled(""))

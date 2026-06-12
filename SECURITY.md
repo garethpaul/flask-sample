@@ -37,6 +37,9 @@ Helpful reports include:
   adds a narrow CSP exception for a required asset type.
 - Local host binding should reject URL-shaped, path-like, or host-plus-port
   values and keep port selection in `PORT`.
+- Flask `TRUSTED_HOSTS` should reject unexpected request Host headers and must
+  not treat wildcard bind addresses as trusted hostnames. See Flask's official
+  guidance: https://flask.palletsprojects.com/en/stable/web-security/#host-header-validation
 - Response headers should keep unused browser capabilities disabled with
   `Permissions-Policy` unless a documented feature needs them.
 - GitHub Actions uses read-only repository permissions and runs the same

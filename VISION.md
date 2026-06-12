@@ -38,6 +38,8 @@ Current baseline:
   localhost default.
 - URL-shaped, path-like, and host-plus-port `FLASK_RUN_HOST` values fall back
   to 127.0.0.1; `PORT` remains the separate port configuration.
+- Flask rejects untrusted request Host headers; loopback names and one validated
+  non-wildcard bind host are trusted.
 - Invalid `PORT` values fall back to 5000 rather than crashing local startup.
 - Responses include basic security headers for content sniffing, clickjacking
   protection, and referrer policy.
@@ -61,6 +63,7 @@ Next priorities:
 - Keep local port behavior documented as startup configuration evolves
 - Keep local host parsing documented as startup configuration evolves
 - Keep host shape validation covered when changing startup binding behavior
+- Keep request Host validation aligned with Flask's `TRUSTED_HOSTS` behavior
 - Keep debug mode loopback-only when changing startup binding behavior
 - Keep debug flag value normalization covered when changing startup config
 - Preserve the basic response header hook when adding routes

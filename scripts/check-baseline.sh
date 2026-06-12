@@ -18,6 +18,7 @@ DEBUG_VALUE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-flask-debug-value-normalizatio
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 FLASK_31_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-3-1-modernization.md"
+TRUSTED_HOSTS_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-trusted-hosts.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -45,6 +46,7 @@ for path in \
   "docs/plans/2026-06-10-content-security-policy-boundaries.md" \
   "docs/plans/2026-06-12-001-fix-content-security-default-deny-plan.md" \
   "docs/plans/2026-06-12-flask-3-1-modernization.md" \
+  "docs/plans/2026-06-12-flask-trusted-hosts.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -65,6 +67,20 @@ if grep -Fq "app.debug = True" "$ROOT_DIR/app.py" ||
   grep -Fq "host='0.0.0.0'" "$ROOT_DIR/app.py" ||
   grep -Fq 'host="0.0.0.0"' "$ROOT_DIR/app.py"; then
   printf '%s\n' "Flask debug mode and public host binding must be opt-in." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'LOOPBACK_TRUSTED_HOSTS = ("localhost", "127.0.0.1", "[::1]")' "$ROOT_DIR/app.py" ||
+  ! grep -Fq 'WILDCARD_BIND_HOSTS = ("0.0.0.0", "::")' "$ROOT_DIR/app.py" ||
+  ! grep -Fq "def trusted_hosts" "$ROOT_DIR/app.py" ||
+  ! grep -Fq 'app.config["TRUSTED_HOSTS"] = trusted_hosts()' "$ROOT_DIR/app.py" ||
+  ! grep -Fq 'configured_host = "[{}]".format(configured_host)' "$ROOT_DIR/app.py" ||
+  ! grep -Fq "test_loopback_host_headers_are_trusted" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "test_untrusted_host_header_is_rejected" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq '"http://attacker.example"' "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq '"http://0.0.0.0:5000"' "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "test_trusted_hosts_include_validated_non_wildcard_bind_host" "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "Flask must validate request Host headers against loopback and configured non-wildcard hosts." >&2
   exit 1
 fi
 
@@ -333,6 +349,12 @@ fi
 if ! grep -Fq "status: completed" "$FLASK_31_PLAN" ||
   ! grep -Fq "make check" "$FLASK_31_PLAN"; then
   printf '%s\n' "Flask 3.1 modernization plan must remain completed with verification recorded." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$TRUSTED_HOSTS_PLAN" ||
+  ! grep -Fq "make check" "$TRUSTED_HOSTS_PLAN"; then
+  printf '%s\n' "Flask trusted hosts plan must remain completed with verification recorded." >&2
   exit 1
 fi
 

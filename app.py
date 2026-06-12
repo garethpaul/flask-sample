@@ -18,6 +18,8 @@ BASIC_SECURITY_HEADERS = {
 }
 
 HOST_LABEL = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
+LOOPBACK_TRUSTED_HOSTS = ("localhost", "127.0.0.1", "[::1]")
+WILDCARD_BIND_HOSTS = ("0.0.0.0", "::")
 
 
 def debug_enabled(value=None):
@@ -70,6 +72,27 @@ def host_name(value=None, default="127.0.0.1"):
     return default
 
 
+def trusted_hosts(value=None):
+    configured_host = host_name(value)
+    hosts = list(LOOPBACK_TRUSTED_HOSTS)
+
+    if configured_host in WILDCARD_BIND_HOSTS:
+        return hosts
+
+    try:
+        parsed_host = ipaddress.ip_address(configured_host)
+        if parsed_host.version == 6:
+            configured_host = "[{}]".format(configured_host)
+    except ValueError:
+        pass
+
+    if configured_host not in hosts:
+        hosts.append(configured_host)
+
+    return hosts
+
+
+app.config["TRUSTED_HOSTS"] = trusted_hosts()
 app.debug = debug_allowed_for_host(host_name())
 
 
