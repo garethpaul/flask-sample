@@ -74,6 +74,10 @@ Run the baseline:
 make check
 ```
 
+Use the absolute Makefile path to run every gate from another working directory.
+Verification resolves both the checker and unittest discovery paths relative to
+the loaded Makefile rather than the caller's directory.
+
 The baseline compiles the app, runs the route tests, and verifies debug mode is
 opt-in rather than hardcoded and remains loopback-only when enabled. It also
 verifies `FLASK_DEBUG` value normalization before the opt-in check, the

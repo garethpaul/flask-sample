@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- Made Flask verification independent of the caller's working directory by
+  rooting both the checker and unittest discovery paths in the loaded Makefile.
 - Completed the cross-origin isolation boundary with an authoritative
   `Cross-Origin-Embedder-Policy: require-corp` header.
 - Covered the exact embedder, opener, and resource policies on successful and
