@@ -8,6 +8,7 @@ from app import (
     debug_enabled,
     host_name,
     port_number,
+    set_basic_security_headers,
     trusted_hosts,
 )
 
@@ -55,6 +56,17 @@ class FlaskSampleTests(unittest.TestCase):
             "same-origin",
             response.headers.get("Cross-Origin-Resource-Policy"),
         )
+
+    def test_security_header_hook_overrides_weaker_existing_values(self):
+        response = app.response_class("Hello")
+        for header in BASIC_SECURITY_HEADERS:
+            response.headers[header] = "unsafe"
+
+        hardened_response = set_basic_security_headers(response)
+
+        self.assertIs(response, hardened_response)
+        for header, expected_value in BASIC_SECURITY_HEADERS.items():
+            self.assertEqual(expected_value, response.headers.get(header))
 
     def test_security_headers_cover_error_responses(self):
         responses = (

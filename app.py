@@ -101,7 +101,7 @@ app.debug = debug_allowed_for_host(host_name())
 @app.after_request
 def set_basic_security_headers(response):
     for header, value in BASIC_SECURITY_HEADERS.items():
-        response.headers.setdefault(header, value)
+        response.headers[header] = value
     return response
 
 

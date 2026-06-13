@@ -49,6 +49,8 @@ Current baseline:
   microphone, and geolocation capabilities.
 - Successful and error responses retain same-origin opener and resource
   policies through the shared after-request boundary.
+- The shared response boundary authoritatively replaces weaker preexisting
+  values for every managed security header.
 - `make lint`, `make test`, and `make build` run the local baseline or unit
   tests while this sample has no narrower installed gates.
 - GitHub Actions runs dependency consistency checks and `make check` on Python
@@ -75,6 +77,8 @@ Next priorities:
   that needs them
 - Keep same-origin opener/resource policies covered across 400, 404, and 405
   responses
+- Keep managed security-header assignment authoritative when adding routes,
+  error handlers, or extensions
 - Keep the hosted CI workflow aligned with `make check`
 - Keep the exact pip bootstrap compatible with every hosted Python version
 
