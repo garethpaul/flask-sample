@@ -1,7 +1,7 @@
 ---
 title: Complete Cross-Origin Isolation
 type: security
-status: planned
+status: completed
 date: 2026-06-13
 ---
 
@@ -90,8 +90,31 @@ Files: `README.md`, `SECURITY.md`, `VISION.md`, `CHANGES.md`, `AGENTS.md`
 
 ## Work Completed
 
-Pending implementation.
+- Added `Cross-Origin-Embedder-Policy: require-corp` to the authoritative
+  shared response-header map.
+- Added an exact success-response assertion while retaining complete-map
+  precedence and 400, 404, and 405 error-response coverage.
+- Extended the static baseline to require the exact policy, explicit success
+  assertion, complete error coverage, repository guidance, and completed plan
+  evidence.
+- Updated contributor, security, maintenance, vision, and change guidance with
+  the complete embedder, opener, and resource policy boundary.
 
 ## Verification Completed
 
-Pending implementation and verification.
+- The three focused embedder-policy tests passed in the constrained Flask 3.1.3
+  environment.
+- The complete 16-test unit suite passed in the constrained environment.
+- `pip check` reported no broken requirements for the reviewed seven-package
+  graph.
+- `make check`, `make lint`, `make test`, and `make build` passed.
+- The missing-policy mutation failed the unit and static baseline.
+- The weakened-value mutation failed the exact response assertions.
+- The success-assertion mutation failed the static baseline.
+- The error-coverage mutation failed the static baseline while remaining valid
+  Python.
+- The plan-evidence mutation failed the static baseline.
+- Python compilation, shell syntax, `git diff --check`, and intended-file
+  secret and artifact scans are included in final-tree verification.
+- The bounded exact-head hosted verification will be recorded after push in the
+  engineering tracker without a watch loop.

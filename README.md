@@ -86,10 +86,12 @@ protection, referrer policy, and a Content-Security-Policy with a default-deny
 subresource policy that also blocks plugin objects, base URL rewriting,
 cross-origin form targets, and framing. It keeps a `Permissions-Policy` header
 that disables unused camera, microphone, and geolocation capabilities.
-Same-origin opener and resource policies also apply to successful and error
-responses. The hook authoritatively replaces weaker preexisting values for
-every managed header name; an upstream proxy can still change headers after
-Flask returns the response.
+Cross-origin embedder, opener, and resource policies also apply to successful
+and error responses. The `require-corp` embedder policy completes the isolation
+boundary for the asset-free page; future cross-origin assets require deliberate
+compatibility review. The hook authoritatively replaces weaker preexisting
+values for every managed header name; an upstream proxy can still change
+headers after Flask returns the response.
 
 The `make lint`, `make test`, and `make build` aliases run the same local
 baseline or unit tests while this sample has no narrower installed gates.
@@ -129,7 +131,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   or routes, and add narrow CSP directives alongside any deliberate assets.
 - Keep the `Permissions-Policy` header in place unless a documented browser
   capability is intentionally added.
-- Keep same-origin opener and resource policies on both route and error
+- Keep the embedder, opener, and resource policies on both route and error
   responses unless a documented cross-origin integration requires a change.
 - Keep the shared response hook authoritative for every managed security header
   rather than preserving weaker route- or extension-provided values.
@@ -162,6 +164,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   opener/resource policy and error-response coverage.
 - See `docs/plans/2026-06-13-authoritative-security-header-enforcement.md` for
   managed-header precedence coverage.
+- See `docs/plans/2026-06-13-complete-cross-origin-isolation.md` for the
+  completed embedder, opener, and resource policy boundary.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
 - Run `make check` before pushing Flask route or configuration changes.
 

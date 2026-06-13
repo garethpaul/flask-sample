@@ -2,6 +2,10 @@
 
 ## 2026-06-13
 
+- Completed the cross-origin isolation boundary with an authoritative
+  `Cross-Origin-Embedder-Policy: require-corp` header.
+- Covered the exact embedder, opener, and resource policies on successful and
+  error responses with mutation-sensitive static contracts.
 - Made the shared response hook replace weaker preexisting values for every
   managed security header.
 - Added a full-map regression and static contract for authoritative header
