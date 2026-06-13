@@ -23,6 +23,7 @@ CONSTRAINTS_PLAN="$ROOT_DIR/docs/plans/2026-06-12-python-dependency-constraints.
 PIP_BOOTSTRAP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-pip-bootstrap-pin.md"
 CROSS_ORIGIN_PLAN="$ROOT_DIR/docs/plans/2026-06-13-cross-origin-isolation-headers.md"
 AUTHORITATIVE_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-13-authoritative-security-header-enforcement.md"
+COMPLETE_ISOLATION_PLAN="$ROOT_DIR/docs/plans/2026-06-13-complete-cross-origin-isolation.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -56,6 +57,7 @@ for path in \
   "docs/plans/2026-06-12-pip-bootstrap-pin.md" \
   "docs/plans/2026-06-13-cross-origin-isolation-headers.md" \
   "docs/plans/2026-06-13-authoritative-security-header-enforcement.md" \
+  "docs/plans/2026-06-13-complete-cross-origin-isolation.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -150,11 +152,12 @@ header_map = app_source.split("BASIC_SECURITY_HEADERS = {", 1)[-1].split(
     "\n}\n\nHOST_LABEL", 1
 )[0]
 required_entries = (
+    '"Cross-Origin-Embedder-Policy": "require-corp"',
     '"Cross-Origin-Opener-Policy": "same-origin"',
     '"Cross-Origin-Resource-Policy": "same-origin"',
 )
 if any(header_map.count(entry) != 1 for entry in required_entries):
-    raise SystemExit("Flask must keep exact same-origin opener and resource policies in the shared header map.")
+    raise SystemExit("Flask must keep the exact embedder, opener, and resource policies in the shared header map.")
 after_request = app_source.split("@app.after_request", 1)[-1].split("@app.route", 1)[0]
 required_hook_contracts = (
     "def set_basic_security_headers(response)",
@@ -169,6 +172,15 @@ if "response.headers.setdefault" in app_source:
 
 if "BASIC_SECURITY_HEADERS," not in test_source:
     raise SystemExit("Route tests must import the complete security-header map.")
+root_header_test = test_source.split(
+    "def test_root_get_sets_basic_security_headers", 1
+)[-1].split("\n    def ", 1)[0]
+required_root_isolation_contracts = (
+    '"require-corp"',
+    'response.headers.get("Cross-Origin-Embedder-Policy")',
+)
+if any(item not in root_header_test for item in required_root_isolation_contracts):
+    raise SystemExit("The root response test must assert the exact embedder policy.")
 error_test = test_source.split("def test_security_headers_cover_error_responses", 1)[-1].split(
     "\n    def ", 1
 )[0]
@@ -461,11 +473,12 @@ if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   exit 1
 fi
 
-if ! grep -Fq "same-origin opener and resource policies" "$ROOT_DIR/README.md" ||
-  ! grep -Fq "Same-origin opener and resource policies" "$ROOT_DIR/SECURITY.md" ||
-  ! grep -Fq "same-origin opener and resource" "$ROOT_DIR/VISION.md" ||
-  ! grep -Fq "same-origin opener and resource policies" "$ROOT_DIR/CHANGES.md"; then
-  printf '%s\n' "Repository guidance must document the cross-origin response boundary." >&2
+if ! grep -Fq "embedder, opener, and resource policies" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "Embedder, opener, and resource policies" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "embedder, opener, and resource policies" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "embedder, opener, and resource policies" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "Cross-Origin-Embedder-Policy" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "Repository guidance must document the complete cross-origin isolation boundary." >&2
   exit 1
 fi
 
@@ -676,6 +689,34 @@ if statuses != ["status: completed"] or any(item not in plan for item in require
     raise SystemExit(
         "Authoritative security-header plan must record completed status and actual verification."
     )
+PY
+
+python3 - "$COMPLETE_ISOLATION_PLAN" <<'PY'
+import sys
+from pathlib import Path
+
+plan = Path(sys.argv[1]).read_text()
+required = (
+    "status: completed",
+    "## Work Completed",
+    "## Verification Completed",
+    "Cross-Origin-Embedder-Policy: require-corp",
+    "focused embedder-policy tests passed",
+    "make check`, `make lint`, `make test`, and `make build` passed",
+    "missing-policy mutation failed",
+    "weakened-value mutation failed",
+    "success-assertion mutation failed",
+    "error-coverage mutation failed",
+    "plan-evidence mutation failed",
+    "bounded exact-head hosted verification",
+)
+if any(item not in plan for item in required):
+    raise SystemExit(
+        "Complete cross-origin isolation plan must record completed status and verification."
+    )
+verification = plan.split("## Verification Completed\n", 1)[-1]
+if "Pending" in verification:
+    raise SystemExit("Complete cross-origin isolation verification must not remain pending.")
 PY
 
 printf '%s\n' "flask-sample debug baseline checks passed."

@@ -42,9 +42,9 @@ Helpful reports include:
   guidance: https://flask.palletsprojects.com/en/stable/web-security/#host-header-validation
 - Response headers should keep unused browser capabilities disabled with
   `Permissions-Policy` unless a documented feature needs them.
-- Same-origin opener and resource policies should remain `same-origin` on both
-  successful and error responses unless a reviewed integration requires broader
-  browser communication.
+- Embedder, opener, and resource policies should remain `require-corp`,
+  `same-origin`, and `same-origin` on successful and error responses. Any
+  cross-origin asset or browser communication requires a compatibility review.
 - The shared `after_request` hook should replace weaker preexisting values for
   every managed security header. Deployment proxies must preserve those values
   after Flask returns the response.

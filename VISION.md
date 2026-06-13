@@ -47,8 +47,9 @@ Current baseline:
   base URL, form-action, and framing boundaries.
 - Responses include a Permissions-Policy that disables unused camera,
   microphone, and geolocation capabilities.
-- Successful and error responses retain same-origin opener and resource
-  policies through the shared after-request boundary.
+- Successful and error responses retain embedder, opener, and resource policies
+  through the shared after-request boundary, completing isolation for the
+  asset-free page.
 - The shared response boundary authoritatively replaces weaker preexisting
   values for every managed security header.
 - `make lint`, `make test`, and `make build` run the local baseline or unit
@@ -75,7 +76,7 @@ Next priorities:
 - Keep the CSP updated if templates begin loading external assets
 - Keep unused browser capabilities disabled unless the sample gains a feature
   that needs them
-- Keep same-origin opener/resource policies covered across 400, 404, and 405
+- Keep embedder, opener, and resource policies covered across 400, 404, and 405
   responses
 - Keep managed security-header assignment authoritative when adding routes,
   error handlers, or extensions

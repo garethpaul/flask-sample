@@ -49,6 +49,10 @@ class FlaskSampleTests(unittest.TestCase):
             response.headers.get("Permissions-Policy"),
         )
         self.assertEqual(
+            "require-corp",
+            response.headers.get("Cross-Origin-Embedder-Policy"),
+        )
+        self.assertEqual(
             "same-origin",
             response.headers.get("Cross-Origin-Opener-Policy"),
         )

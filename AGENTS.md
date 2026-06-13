@@ -53,6 +53,8 @@ default response headers.
 - Keep response headers such as `X-Content-Type-Options` and `Referrer-Policy` in place when adding routes.
 - Keep the shared response hook authoritative for managed security headers; do
   not preserve weaker values supplied by routes, error handlers, or extensions.
+- Keep `Cross-Origin-Embedder-Policy: require-corp` with the same-origin opener
+  and resource policies; review compatibility before adding cross-origin assets.
 - Keep `X-Frame-Options: DENY` in place unless a documented embedding use case is added.
 - Keep the default-deny Content-Security-Policy in place when adding new templates, routes, or external assets; add only narrow reviewed exceptions for required asset types.
 - Keep `Permissions-Policy` disabling camera, microphone, and geolocation unless a documented feature requires one of those capabilities.
