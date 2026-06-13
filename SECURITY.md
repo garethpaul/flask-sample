@@ -42,6 +42,9 @@ Helpful reports include:
   guidance: https://flask.palletsprojects.com/en/stable/web-security/#host-header-validation
 - Response headers should keep unused browser capabilities disabled with
   `Permissions-Policy` unless a documented feature needs them.
+- Same-origin opener and resource policies should remain `same-origin` on both
+  successful and error responses unless a reviewed integration requires broader
+  browser communication.
 - GitHub Actions uses read-only repository permissions and runs the same
   `make check` baseline as local development without persisting checkout
   credentials; do not add secrets or deployment steps without a separate

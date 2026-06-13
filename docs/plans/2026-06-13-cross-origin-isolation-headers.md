@@ -1,7 +1,7 @@
 ---
 title: Cross-Origin Isolation Headers
 type: security
-status: in_progress
+status: completed
 date: 2026-06-13
 ---
 
@@ -74,3 +74,28 @@ Files: `scripts/check-baseline.sh`, `README.md`, `SECURITY.md`, `VISION.md`, `CH
   secret scans.
 - Take one bounded exact-head pull-request and CodeQL snapshot after push; do
   not poll.
+
+## Work Completed
+
+- Added exact same-origin opener and resource policies to the shared
+  `BASIC_SECURITY_HEADERS` map.
+- Extended the successful root-response assertions for both headers.
+- Added full-map regression coverage for untrusted-host 400, missing-route 404,
+  and unsupported-method 405 responses.
+- Extended the static baseline and repository guidance with the shared-map,
+  error-matrix, and completed-plan contracts.
+
+## Verification Completed
+
+- Focused Flask 3.1.3 tests passed in a clean constrained virtual environment.
+- `make check`, `make lint`, `make test`, and `make build` passed with the clean
+  constrained Flask 3.1.3 virtual environment; all 15 tests passed.
+- `pip check`, Python compilation, `sh -n scripts/check-baseline.sh`,
+  `git diff --check`, and the intended-file secret scan passed.
+- The missing header mutation failed the 15-test unit suite.
+- The weakened value mutation failed the 15-test unit suite.
+- The error matrix mutation failed with `Route tests must preserve full
+  security-header coverage for 400, 404, and 405 responses.`
+- The hosted pull-request check is not available before push; one bounded
+  exact-head snapshot will be recorded in the engineering tracker without
+  polling.

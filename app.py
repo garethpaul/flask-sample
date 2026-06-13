@@ -11,6 +11,8 @@ BASIC_SECURITY_HEADERS = {
         "default-src 'none'; object-src 'none'; base-uri 'none'; "
         "form-action 'self'; frame-ancestors 'none'"
     ),
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Resource-Policy": "same-origin",
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",

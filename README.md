@@ -85,7 +85,8 @@ Responses include basic security headers for content sniffing, clickjacking
 protection, referrer policy, and a Content-Security-Policy with a default-deny
 subresource policy that also blocks plugin objects, base URL rewriting,
 cross-origin form targets, and framing. It keeps a `Permissions-Policy` header
-that disables unused camera, microphone, and geolocation capabilities.
+that disables unused camera, microphone, and geolocation capabilities. Same-origin
+opener and resource policies also apply to successful and error responses.
 
 The `make lint`, `make test`, and `make build` aliases run the same local
 baseline or unit tests while this sample has no narrower installed gates.
@@ -125,6 +126,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   or routes, and add narrow CSP directives alongside any deliberate assets.
 - Keep the `Permissions-Policy` header in place unless a documented browser
   capability is intentionally added.
+- Keep same-origin opener and resource policies on both route and error
+  responses unless a documented cross-origin integration requires a change.
 
 ## Maintenance Notes
 
@@ -150,6 +153,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Content-Security-Policy header guard.
 - See `docs/plans/2026-06-09-permissions-policy-header.md` for the browser
   capability policy guard.
+- See `docs/plans/2026-06-13-cross-origin-isolation-headers.md` for same-origin
+  opener/resource policy and error-response coverage.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
 - Run `make check` before pushing Flask route or configuration changes.
 

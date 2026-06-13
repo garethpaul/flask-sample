@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-06-13
+
+- Added same-origin opener and resource policies to the shared Flask response
+  security-header map.
+- Added full security-header regression coverage for 400, 404, and 405
+  responses.
+
 ## 2026-06-12
 
 - Pinned the hosted pip bootstrap to 26.1.2 and added exact workflow, plan, and

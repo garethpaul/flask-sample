@@ -47,6 +47,8 @@ Current baseline:
   base URL, form-action, and framing boundaries.
 - Responses include a Permissions-Policy that disables unused camera,
   microphone, and geolocation capabilities.
+- Successful and error responses retain same-origin opener and resource
+  policies through the shared after-request boundary.
 - `make lint`, `make test`, and `make build` run the local baseline or unit
   tests while this sample has no narrower installed gates.
 - GitHub Actions runs dependency consistency checks and `make check` on Python
@@ -71,6 +73,8 @@ Next priorities:
 - Keep the CSP updated if templates begin loading external assets
 - Keep unused browser capabilities disabled unless the sample gains a feature
   that needs them
+- Keep same-origin opener/resource policies covered across 400, 404, and 405
+  responses
 - Keep the hosted CI workflow aligned with `make check`
 - Keep the exact pip bootstrap compatible with every hosted Python version
 
