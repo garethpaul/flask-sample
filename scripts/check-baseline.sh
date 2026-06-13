@@ -24,6 +24,7 @@ PIP_BOOTSTRAP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-pip-bootstrap-pin.md"
 CROSS_ORIGIN_PLAN="$ROOT_DIR/docs/plans/2026-06-13-cross-origin-isolation-headers.md"
 AUTHORITATIVE_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-13-authoritative-security-header-enforcement.md"
 COMPLETE_ISOLATION_PLAN="$ROOT_DIR/docs/plans/2026-06-13-complete-cross-origin-isolation.md"
+LOCATION_INDEPENDENT_MAKE_PLAN="$ROOT_DIR/docs/plans/2026-06-13-location-independent-make.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -58,6 +59,7 @@ for path in \
   "docs/plans/2026-06-13-cross-origin-isolation-headers.md" \
   "docs/plans/2026-06-13-authoritative-security-header-enforcement.md" \
   "docs/plans/2026-06-13-complete-cross-origin-isolation.md" \
+  "docs/plans/2026-06-13-location-independent-make.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -70,6 +72,21 @@ for path in \
   "docs/plans/2026-06-08-flask-sample-debug-baseline.md"; do
   require_file "$path"
 done
+
+if ! grep -Fq 'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$ROOT_DIR/Makefile" ||
+  ! grep -Fq 'cd "$(ROOT)" && $(PYTHON) -m unittest discover -s tests' "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile verification must resolve checker and test execution from the loaded Makefile." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$LOCATION_INDEPENDENT_MAKE_PLAN" ||
+  ! grep -Fq "from /tmp" "$LOCATION_INDEPENDENT_MAKE_PLAN" ||
+  ! grep -Fq "absolute Makefile path" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "Made Flask verification independent" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Location-independent Make plan and guidance must record completed external verification." >&2
+  exit 1
+fi
 
 "$PYTHON" -m py_compile "$ROOT_DIR/app.py" "$ROOT_DIR/tests/test_app.py"
 (cd "$ROOT_DIR" && "$PYTHON" -m unittest discover -s tests -p "test*.py")

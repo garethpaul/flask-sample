@@ -2,7 +2,7 @@
 title: Location-Independent Flask Verification
 type: reliability
 date: 2026-06-13
-status: planned
+status: completed
 execution: code
 ---
 
@@ -42,8 +42,24 @@ Makefile so every documented gate works outside the checkout.
 
 ## Work Completed
 
-Pending implementation.
+- Derived the repository root from the loaded Makefile and invoked the checker
+  through that absolute path.
+- Run unittest discovery from the repository root so both the tests directory
+  and application imports remain deterministic outside the checkout.
+- Extended the baseline with rooted-path, completed-plan, external-run, and
+  synchronized-guidance contracts.
+- Preserved Flask routes, responses, security headers, templates, dependencies,
+  workflow, and tests unchanged.
 
 ## Verification Completed
 
-Pending implementation and verification.
+- `make check`, `make lint`, `make test`, and `make build` passed in the
+  constrained Flask 3.1.3 environment at repository root and from /tmp through
+  the absolute Makefile path.
+- Six isolated hostile root-derivation, checker-path, test-path, documentation,
+  plan-status, and verification-evidence mutations were rejected.
+- Dependency consistency, Python compilation, shell syntax, `git diff --check`,
+  exact-path review, added-line secret scanning, and generated-artifact
+  inspection passed.
+- No route, response, header, template, dependency, workflow, or test behavior
+  changed; browser and production proxy behavior were not claimed.
