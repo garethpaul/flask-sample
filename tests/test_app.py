@@ -2,6 +2,7 @@ import unittest
 from importlib.metadata import version
 
 from app import (
+    BASIC_SECURITY_HEADERS,
     app,
     debug_allowed_for_host,
     debug_enabled,
@@ -46,6 +47,27 @@ class FlaskSampleTests(unittest.TestCase):
             "geolocation=(), microphone=(), camera=()",
             response.headers.get("Permissions-Policy"),
         )
+        self.assertEqual(
+            "same-origin",
+            response.headers.get("Cross-Origin-Opener-Policy"),
+        )
+        self.assertEqual(
+            "same-origin",
+            response.headers.get("Cross-Origin-Resource-Policy"),
+        )
+
+    def test_security_headers_cover_error_responses(self):
+        responses = (
+            (400, self.client.get("/", base_url="http://attacker.example")),
+            (404, self.client.get("/missing")),
+            (405, self.client.post("/")),
+        )
+
+        for expected_status, response in responses:
+            with self.subTest(status=expected_status):
+                self.assertEqual(expected_status, response.status_code)
+                for header, expected_value in BASIC_SECURITY_HEADERS.items():
+                    self.assertEqual(expected_value, response.headers.get(header))
 
     def test_root_get_sets_content_security_policy(self):
         response = self.client.get("/")

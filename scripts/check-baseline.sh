@@ -21,6 +21,7 @@ FLASK_31_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-3-1-modernization.md"
 TRUSTED_HOSTS_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-trusted-hosts.md"
 CONSTRAINTS_PLAN="$ROOT_DIR/docs/plans/2026-06-12-python-dependency-constraints.md"
 PIP_BOOTSTRAP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-pip-bootstrap-pin.md"
+CROSS_ORIGIN_PLAN="$ROOT_DIR/docs/plans/2026-06-13-cross-origin-isolation-headers.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -52,6 +53,7 @@ for path in \
   "docs/plans/2026-06-12-flask-trusted-hosts.md" \
   "docs/plans/2026-06-12-python-dependency-constraints.md" \
   "docs/plans/2026-06-12-pip-bootstrap-pin.md" \
+  "docs/plans/2026-06-13-cross-origin-isolation-headers.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -134,6 +136,41 @@ if ! grep -Fq "@app.after_request" "$ROOT_DIR/app.py" ||
   printf '%s\n' "Flask responses must keep basic security headers and test coverage." >&2
   exit 1
 fi
+
+python3 - "$ROOT_DIR/app.py" "$ROOT_DIR/tests/test_app.py" <<'PY'
+import sys
+from pathlib import Path
+
+app_source = Path(sys.argv[1]).read_text()
+test_source = Path(sys.argv[2]).read_text()
+
+header_map = app_source.split("BASIC_SECURITY_HEADERS = {", 1)[-1].split(
+    "\n}\n\nHOST_LABEL", 1
+)[0]
+required_entries = (
+    '"Cross-Origin-Opener-Policy": "same-origin"',
+    '"Cross-Origin-Resource-Policy": "same-origin"',
+)
+if any(header_map.count(entry) != 1 for entry in required_entries):
+    raise SystemExit("Flask must keep exact same-origin opener and resource policies in the shared header map.")
+if app_source.count("response.headers.setdefault(header, value)") != 1:
+    raise SystemExit("Flask security headers must remain on the shared after-request boundary.")
+
+if "BASIC_SECURITY_HEADERS," not in test_source:
+    raise SystemExit("Route tests must import the complete security-header map.")
+error_test = test_source.split("def test_security_headers_cover_error_responses", 1)[-1].split(
+    "\n    def ", 1
+)[0]
+required_test_contracts = (
+    '(400, self.client.get("/", base_url="http://attacker.example"))',
+    '(404, self.client.get("/missing"))',
+    '(405, self.client.post("/"))',
+    "for header, expected_value in BASIC_SECURITY_HEADERS.items()",
+    "self.assertEqual(expected_value, response.headers.get(header))",
+)
+if any(item not in error_test for item in required_test_contracts):
+    raise SystemExit("Route tests must preserve full security-header coverage for 400, 404, and 405 responses.")
+PY
 
 if ! grep -Fq "default-src 'none'" "$ROOT_DIR/app.py" ||
   ! grep -Fq "object-src 'none'" "$ROOT_DIR/app.py" ||
@@ -385,6 +422,14 @@ if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   exit 1
 fi
 
+if ! grep -Fq "same-origin opener and resource policies" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "Same-origin opener and resource policies" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "same-origin opener and resource" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "same-origin opener and resource policies" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Repository guidance must document the cross-origin response boundary." >&2
+  exit 1
+fi
+
 if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "GitHub Actions" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "debug mode" "$ROOT_DIR/VISION.md" ||
@@ -548,6 +593,27 @@ if (
 ):
     raise SystemExit(
         "Python constraints plan must remain completed with actual verification recorded."
+    )
+PY
+
+python3 - "$CROSS_ORIGIN_PLAN" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+plan = Path(sys.argv[1]).read_text()
+frontmatter = plan.split("---", 2)[1]
+statuses = re.findall(r"^status: .+$", frontmatter, flags=re.MULTILINE)
+required = (
+    "missing header mutation failed",
+    "weakened value mutation failed",
+    "error matrix mutation failed",
+    "hosted pull-request check",
+)
+
+if statuses != ["status: completed"] or any(item not in plan for item in required):
+    raise SystemExit(
+        "Cross-origin isolation plan must record completed status and actual verification."
     )
 PY
 
