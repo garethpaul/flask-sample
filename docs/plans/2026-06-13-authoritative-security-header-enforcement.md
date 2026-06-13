@@ -1,7 +1,7 @@
 ---
 title: Authoritative Security Header Enforcement
 type: security
-status: planned
+status: completed
 date: 2026-06-13
 ---
 
@@ -87,8 +87,29 @@ Files: `README.md`, `SECURITY.md`, `VISION.md`, `CHANGES.md`, `AGENTS.md`
 
 ## Work Completed
 
-Pending implementation.
+- Replaced missing-only security-header insertion with direct assignment from
+  the complete reviewed map at the shared `after_request` boundary.
+- Added a regression response containing an intentionally weak value for every
+  managed header and asserted both response identity and every final value.
+- Extended the static baseline to reject fallback insertion, incomplete weak
+  setup, partial map iteration, reduced final assertions, documentation drift,
+  and incomplete plan evidence.
+- Updated contributor, security, maintenance, vision, and change guidance with
+  the authoritative Flask boundary and upstream-proxy limitation.
 
 ## Verification Completed
 
-Pending implementation and verification.
+- The focused authoritative-header regression passed in the constrained Flask
+  3.1.3 environment.
+- `make check`, `make lint`, `make test`, and `make build` passed with all 16
+  tests in the constrained environment.
+- `pip check` reported no broken requirements.
+- The setdefault mutation failed the unit or static baseline.
+- The weak-value setup mutation failed the static baseline.
+- The map-iteration mutation failed the static baseline.
+- The final-assertion mutation failed the unit or static baseline.
+- Python compilation, shell syntax, `git diff --check`, and intended-file secret
+  scans are included in final-tree verification.
+- The hosted pull-request check is not available before the implementation
+  push; bounded exact-head evidence will be recorded in the engineering tracker
+  without a watch loop.

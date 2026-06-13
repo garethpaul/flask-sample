@@ -2,6 +2,10 @@
 
 ## 2026-06-13
 
+- Made the shared response hook replace weaker preexisting values for every
+  managed security header.
+- Added a full-map regression and static contract for authoritative header
+  assignment.
 - Added same-origin opener and resource policies to the shared Flask response
   security-header map.
 - Added full security-header regression coverage for 400, 404, and 405

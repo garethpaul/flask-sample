@@ -51,6 +51,8 @@ default response headers.
 - Debug mode is local-only. Do not expose the Werkzeug debugger on a public interface.
 - `FLASK_DEBUG` should only enable debug mode for loopback host bindings.
 - Keep response headers such as `X-Content-Type-Options` and `Referrer-Policy` in place when adding routes.
+- Keep the shared response hook authoritative for managed security headers; do
+  not preserve weaker values supplied by routes, error handlers, or extensions.
 - Keep `X-Frame-Options: DENY` in place unless a documented embedding use case is added.
 - Keep the default-deny Content-Security-Policy in place when adding new templates, routes, or external assets; add only narrow reviewed exceptions for required asset types.
 - Keep `Permissions-Policy` disabling camera, microphone, and geolocation unless a documented feature requires one of those capabilities.

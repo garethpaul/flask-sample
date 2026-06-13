@@ -45,6 +45,9 @@ Helpful reports include:
 - Same-origin opener and resource policies should remain `same-origin` on both
   successful and error responses unless a reviewed integration requires broader
   browser communication.
+- The shared `after_request` hook should replace weaker preexisting values for
+  every managed security header. Deployment proxies must preserve those values
+  after Flask returns the response.
 - GitHub Actions uses read-only repository permissions and runs the same
   `make check` baseline as local development without persisting checkout
   credentials; do not add secrets or deployment steps without a separate

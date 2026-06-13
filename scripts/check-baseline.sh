@@ -22,6 +22,7 @@ TRUSTED_HOSTS_PLAN="$ROOT_DIR/docs/plans/2026-06-12-flask-trusted-hosts.md"
 CONSTRAINTS_PLAN="$ROOT_DIR/docs/plans/2026-06-12-python-dependency-constraints.md"
 PIP_BOOTSTRAP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-pip-bootstrap-pin.md"
 CROSS_ORIGIN_PLAN="$ROOT_DIR/docs/plans/2026-06-13-cross-origin-isolation-headers.md"
+AUTHORITATIVE_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-13-authoritative-security-header-enforcement.md"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -54,6 +55,7 @@ for path in \
   "docs/plans/2026-06-12-python-dependency-constraints.md" \
   "docs/plans/2026-06-12-pip-bootstrap-pin.md" \
   "docs/plans/2026-06-13-cross-origin-isolation-headers.md" \
+  "docs/plans/2026-06-13-authoritative-security-header-enforcement.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -153,8 +155,17 @@ required_entries = (
 )
 if any(header_map.count(entry) != 1 for entry in required_entries):
     raise SystemExit("Flask must keep exact same-origin opener and resource policies in the shared header map.")
-if app_source.count("response.headers.setdefault(header, value)") != 1:
-    raise SystemExit("Flask security headers must remain on the shared after-request boundary.")
+after_request = app_source.split("@app.after_request", 1)[-1].split("@app.route", 1)[0]
+required_hook_contracts = (
+    "def set_basic_security_headers(response)",
+    "for header, value in BASIC_SECURITY_HEADERS.items()",
+    "response.headers[header] = value",
+    "return response",
+)
+if any(after_request.count(item) != 1 for item in required_hook_contracts):
+    raise SystemExit("Flask security headers must be assigned authoritatively at the shared boundary.")
+if "response.headers.setdefault" in app_source:
+    raise SystemExit("Flask security headers must not preserve weaker preexisting values.")
 
 if "BASIC_SECURITY_HEADERS," not in test_source:
     raise SystemExit("Route tests must import the complete security-header map.")
@@ -170,6 +181,25 @@ required_test_contracts = (
 )
 if any(item not in error_test for item in required_test_contracts):
     raise SystemExit("Route tests must preserve full security-header coverage for 400, 404, and 405 responses.")
+
+override_name = "def test_security_header_hook_overrides_weaker_existing_values"
+if test_source.count(override_name) != 1:
+    raise SystemExit("Route tests must keep one authoritative-header override regression.")
+override_test = test_source.split(
+    override_name, 1
+)[-1].split("\n    def ", 1)[0]
+required_override_contracts = (
+    "for header in BASIC_SECURITY_HEADERS:",
+    'response.headers[header] = "unsafe"',
+    "hardened_response = set_basic_security_headers(response)",
+    "self.assertIs(response, hardened_response)",
+    "for header, expected_value in BASIC_SECURITY_HEADERS.items()",
+    "self.assertEqual(expected_value, response.headers.get(header))",
+)
+if any(item not in override_test for item in required_override_contracts):
+    raise SystemExit(
+        "Route tests must prove the shared hook replaces every weaker managed header."
+    )
 PY
 
 if ! grep -Fq "default-src 'none'" "$ROOT_DIR/app.py" ||
@@ -407,6 +437,15 @@ if ! grep -Fq "read-only repository permissions" "$ROOT_DIR/SECURITY.md" ||
   exit 1
 fi
 
+if ! grep -Fq "authoritatively replaces weaker" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "replace weaker preexisting values" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "authoritatively replaces weaker preexisting" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq "Made the shared response hook replace weaker" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "shared response hook authoritative" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "Repository guidance must document authoritative security-header assignment." >&2
+  exit 1
+fi
+
 if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   ! grep -Fq "GitHub Actions" "$ROOT_DIR/README.md" ||
   ! grep -Fq "FLASK_DEBUG" "$ROOT_DIR/README.md" ||
@@ -614,6 +653,28 @@ required = (
 if statuses != ["status: completed"] or any(item not in plan for item in required):
     raise SystemExit(
         "Cross-origin isolation plan must record completed status and actual verification."
+    )
+PY
+
+python3 - "$AUTHORITATIVE_HEADERS_PLAN" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+plan = Path(sys.argv[1]).read_text()
+frontmatter = plan.split("---", 2)[1]
+statuses = re.findall(r"^status: .+$", frontmatter, flags=re.MULTILINE)
+required = (
+    "setdefault mutation failed",
+    "weak-value setup mutation failed",
+    "map-iteration mutation failed",
+    "final-assertion mutation failed",
+    "hosted pull-request check",
+)
+
+if statuses != ["status: completed"] or any(item not in plan for item in required):
+    raise SystemExit(
+        "Authoritative security-header plan must record completed status and actual verification."
     )
 PY
 
