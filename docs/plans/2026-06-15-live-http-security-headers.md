@@ -2,7 +2,7 @@
 title: Live HTTP Security Header Verification
 type: testing
 date: 2026-06-15
-status: pending
+status: completed
 execution: code
 ---
 
@@ -43,4 +43,15 @@ the WSGI boundary, not only through Flask's in-process test client.
 
 ## Verification
 
-Pending implementation and validation.
+- The exact constrained Flask 3.1.3 dependency graph passed all 17 tests on
+  Python 3.10.19, 3.12.8, and 3.14.0.
+- The live HTTP test rendered the root through an ephemeral loopback Werkzeug
+  server and verified every `BASIC_SECURITY_HEADERS` value on the wire.
+- Twelve hostile mutations were rejected across public binding, fixed port,
+  default logging, unbounded HTTP reads, wrong route, missing client close,
+  partial header coverage, missing shutdown, unbounded join, missing socket
+  close, missing stopped-thread proof, and incomplete plan evidence.
+- Repository and external-directory `make check` verification passed through
+  the constrained Python 3.12 environment.
+- Python and shell syntax, dependency consistency, exact diff, secret, and
+  generated-artifact audits passed before delivery.

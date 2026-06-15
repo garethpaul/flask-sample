@@ -1,5 +1,9 @@
+import threading
 import unittest
+from http.client import HTTPConnection
 from importlib.metadata import version
+
+from werkzeug.serving import WSGIRequestHandler, make_server
 
 from app import (
     BASIC_SECURITY_HEADERS,
@@ -11,6 +15,11 @@ from app import (
     set_basic_security_headers,
     trusted_hosts,
 )
+
+
+class SilentRequestHandler(WSGIRequestHandler):
+    def log_request(self, code="-", size="-"):
+        pass
 
 
 class FlaskSampleTests(unittest.TestCase):
@@ -60,6 +69,34 @@ class FlaskSampleTests(unittest.TestCase):
             "same-origin",
             response.headers.get("Cross-Origin-Resource-Policy"),
         )
+
+    def test_live_http_root_sets_every_managed_security_header(self):
+        server = make_server(
+            "127.0.0.1",
+            0,
+            app,
+            request_handler=SilentRequestHandler,
+        )
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.start()
+
+        try:
+            client = HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+            try:
+                client.request("GET", "/")
+                response = client.getresponse()
+                self.assertEqual(200, response.status)
+                self.assertIn(b"Hello", response.read())
+                for header, expected_value in BASIC_SECURITY_HEADERS.items():
+                    self.assertEqual(expected_value, response.headers.get(header))
+            finally:
+                client.close()
+        finally:
+            server.shutdown()
+            server_thread.join(timeout=2)
+            server.server_close()
+
+        self.assertFalse(server_thread.is_alive())
 
     def test_security_header_hook_overrides_weaker_existing_values(self):
         response = app.response_class("Hello")

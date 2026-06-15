@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-15
+
+- Added loopback HTTP integration coverage that verifies the rendered root and
+  every managed security header across the live WSGI response boundary.
+
 ## 2026-06-13
 
 - Made Flask verification independent of the caller's working directory by
