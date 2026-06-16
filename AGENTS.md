@@ -6,6 +6,10 @@
 to demonstrate safe local startup configuration, a GET-only route, and secure
 default response headers.
 
+The sample intentionally serves no static assets. Preserve
+`static_folder=None` so Flask does not register an unused `/static/<path>`
+endpoint, and keep static-path 404 responses under the shared header policy.
+
 ## Project structure
 
 - `Makefile` - repository verification targets

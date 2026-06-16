@@ -12,6 +12,10 @@ handling, templates, and local development.
 The goal is to keep the sample simple, runnable, and honest about its debug
 development posture.
 
+The HTTP surface remains intentional: because the sample serves no static
+assets, Flask's default static endpoint stays disabled and covered by live
+response tests.
+
 The current focus is:
 
 Priority:

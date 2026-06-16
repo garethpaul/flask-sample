@@ -8,18 +8,25 @@ def require(source: str, value: str, message: str) -> None:
         raise SystemExit(message)
 
 
-def test_body(source: str) -> str:
-    marker = "    def test_live_http_root_sets_every_managed_security_header(self):"
+def test_body(source: str, test_name: str) -> str:
+    marker = "    def " + test_name + "(self):"
     start = source.find(marker)
     if start == -1:
-        raise SystemExit("Live HTTP security-header test is missing.")
+        raise SystemExit("Live HTTP security test is missing: " + test_name)
     end = source.find("\n    def test_", start + len(marker))
     return source[start:] if end == -1 else source[start:end]
 
 
 def main(test_path: Path, plan_path: Path) -> None:
     source = test_path.read_text(encoding="utf-8")
-    live_test = test_body(source)
+    live_test = test_body(
+        source,
+        "test_live_http_root_sets_every_managed_security_header",
+    )
+    live_static_test = test_body(
+        source,
+        "test_live_http_static_path_is_hardened_not_found_response",
+    )
     plan = plan_path.read_text(encoding="utf-8")
 
     contracts = (
@@ -61,6 +68,26 @@ def main(test_path: Path, plan_path: Path) -> None:
     )
     for value, message in contracts:
         require(live_test, value, message)
+
+    static_contracts = (
+        ('client.request("GET", "/static/app.js")', "Live static test must request the disabled route."),
+        ("self.assertEqual(404, response.status)", "Live static test must require a not-found response."),
+        ("response.read()", "Live static test must consume the response body."),
+        (
+            "for header, expected_value in BASIC_SECURITY_HEADERS.items():",
+            "Live static test must cover every managed security header.",
+        ),
+        ("client.close()", "Live static test must close its client connection."),
+        ("server.shutdown()", "Live static test must stop the serving loop."),
+        ("server_thread.join(timeout=2)", "Live static test must bound thread cleanup."),
+        ("server.server_close()", "Live static test must close its listening socket."),
+        (
+            "self.assertFalse(server_thread.is_alive())",
+            "Live static test must prove the server thread stopped.",
+        ),
+    )
+    for value, message in static_contracts:
+        require(live_static_test, value, message)
 
     require(
         source,

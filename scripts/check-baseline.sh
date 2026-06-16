@@ -27,6 +27,7 @@ COMPLETE_ISOLATION_PLAN="$ROOT_DIR/docs/plans/2026-06-13-complete-cross-origin-i
 LOCATION_INDEPENDENT_MAKE_PLAN="$ROOT_DIR/docs/plans/2026-06-13-location-independent-make.md"
 LIVE_HTTP_SECURITY_PLAN="$ROOT_DIR/docs/plans/2026-06-15-live-http-security-headers.md"
 HASH_LOCK_PLAN="$ROOT_DIR/docs/plans/2026-06-16-hash-verified-dependency-lock.md"
+STATIC_ROUTE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-disable-unused-static-route.md"
 LIVE_HTTP_SECURITY_CHECK="$ROOT_DIR/scripts/check-live-http-security.py"
 PYTHON=${PYTHON:-python3}
 
@@ -67,6 +68,7 @@ for path in \
   "docs/plans/2026-06-13-location-independent-make.md" \
   "docs/plans/2026-06-15-live-http-security-headers.md" \
   "docs/plans/2026-06-16-hash-verified-dependency-lock.md" \
+  "docs/plans/2026-06-16-disable-unused-static-route.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -81,6 +83,42 @@ for path in \
 done
 
 "$PYTHON" "$LIVE_HTTP_SECURITY_CHECK" "$ROOT_DIR/tests/test_app.py" "$LIVE_HTTP_SECURITY_PLAN"
+
+if ! grep -Fq 'app = Flask(__name__, static_folder=None)' "$ROOT_DIR/app.py" ||
+  grep -Fq "app.static_dir" "$ROOT_DIR/app.py" ||
+  grep -Fq "os.getcwd()" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "test_url_map_excludes_unused_static_endpoint" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq 'self.assertNotIn("static", endpoints)' "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "test_static_path_is_hardened_not_found_response" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "test_live_http_static_path_is_hardened_not_found_response" "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "Flask must disable and test the unused default static endpoint." >&2
+  exit 1
+fi
+
+"$PYTHON" - "$STATIC_ROUTE_PLAN" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+plan = Path(sys.argv[1]).read_text(encoding="utf-8")
+frontmatter = plan.split("---", 2)[1]
+verification = plan.split("## Verification Completed\n", 1)[-1]
+required = (
+    "focused static-route tests passed",
+    "live HTTP static-route test passed",
+    "all four Make gates passed",
+    "absolute Makefile path passed",
+    "six hostile mutations were rejected",
+    "hosted pull-request check",
+)
+if (
+    re.findall(r"^status: .+$", frontmatter, flags=re.MULTILINE) != ["status: completed"]
+    or "## Verification Completed\n" not in plan
+    or any(value not in verification for value in required)
+    or re.search(r"\b(?:pending|todo|tbd|not run|not yet)\b", verification, re.IGNORECASE)
+):
+    raise SystemExit("Static-route plan must retain completed verification evidence")
+PY
 
 if ! grep -Fq 'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DIR/Makefile" ||
   ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$ROOT_DIR/Makefile" ||

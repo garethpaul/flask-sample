@@ -6,6 +6,10 @@ The supported security scope for `flask-sample` is the current default branch, `
 
 Project summary: Flask sample
 
+The sample disables Flask's unused default static endpoint. The maintenance
+gate verifies that `/static/...` is absent from the URL map and returns a
+security-header-protected `404` through both test-client and live HTTP paths.
+
 ## Reporting a Vulnerability
 
 Please report suspected vulnerabilities through GitHub's private vulnerability reporting or by opening a draft GitHub Security Advisory for `garethpaul/flask-sample` when that option is available. If GitHub does not show a private reporting option for this repository, contact the repository owner through GitHub and avoid posting exploit details publicly until the issue can be assessed.

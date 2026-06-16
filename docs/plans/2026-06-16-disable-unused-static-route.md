@@ -2,7 +2,7 @@
 title: Disable the unused Flask static route
 type: security
 date: 2026-06-16
-status: in_progress
+status: completed
 execution: code
 ---
 
@@ -66,11 +66,26 @@ HTTP surface and its verification boundary.
 - Mutations that restore default static serving, reintroduce CWD-derived static
   state, remove either regression, or reopen plan evidence are rejected.
 
-## Verification
+## Work Completed
 
-- Run focused unit and live HTTP tests.
-- Run repository-root `make check`, `make lint`, `make test`, and `make build`.
-- Run absolute-Makefile `make check` from an external directory.
-- Audit Python/shell syntax, mutations, generated artifacts, changed-line
-  credential patterns, executable modes, and `git diff --check`.
+- Constructed the Flask app with `static_folder=None` and removed the
+  ineffective CWD-derived `static_dir` attribute.
+- Added URL-map and test-client regressions for the disabled static endpoint.
+- Added a controlled live HTTP static-path 404 regression with complete
+  authoritative security-header assertions and bounded cleanup.
+- Extended the baseline and live checker to preserve the implementation,
+  regression coverage, documentation, and completed evidence.
 
+## Verification Completed
+
+- The focused static-route tests passed.
+- The live HTTP static-route test passed with every managed security header.
+- all four Make gates passed from the repository root.
+- The absolute Makefile path passed from an external directory.
+- six hostile mutations were rejected across static registration, CWD-derived
+  state, route-map coverage, test-client coverage, live HTTP coverage, and plan
+  completion evidence.
+- Python and shell syntax, generated-artifact cleanup, executable modes,
+  changed-line credential scans, and `git diff --check` passed.
+- The hosted pull-request check is required for exact-head delivery evidence;
+  no reverse-proxy, TLS, browser, or production deployment result is claimed.

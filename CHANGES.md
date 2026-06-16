@@ -1,5 +1,8 @@
 # Changes
 
+- Disabled Flask's unused default static endpoint and added test-client plus
+  live-HTTP regressions for hardened static-path 404 responses.
+
 - Added `requirements.lock` and made hosted Python 3.10, 3.12, and 3.14
   installs reject package artifacts that are not covered by its SHA-256 hashes.
 - `requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.

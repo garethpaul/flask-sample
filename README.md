@@ -7,6 +7,10 @@
 
 `garethpaul/flask-sample` is a static web project. Flask sample
 
+The application serves no static assets and explicitly disables Flask's default
+`/static/<path>` endpoint. Requests under that path return a normal hardened
+`404` with the same authoritative security headers as every other response.
+
 This README is based on the checked-in source, manifests, scripts, and repository metadata on the `master` branch. The project language mix found during review was: Python (1).
 
 ## Repository Contents

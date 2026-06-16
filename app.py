@@ -3,8 +3,7 @@ import os
 import re
 from flask import Flask, render_template
 
-app = Flask(__name__)
-app.static_dir = os.path.join(os.getcwd(), "static")
+app = Flask(__name__, static_folder=None)
 
 BASIC_SECURITY_HEADERS = {
     "Content-Security-Policy": (

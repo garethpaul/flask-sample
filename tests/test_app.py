@@ -38,6 +38,19 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn(b"Hello", response.data)
 
+    def test_url_map_excludes_unused_static_endpoint(self):
+        endpoints = {rule.endpoint for rule in app.url_map.iter_rules()}
+
+        self.assertIn("hello", endpoints)
+        self.assertNotIn("static", endpoints)
+
+    def test_static_path_is_hardened_not_found_response(self):
+        response = self.client.get("/static/app.js")
+
+        self.assertEqual(404, response.status_code)
+        for header, expected_value in BASIC_SECURITY_HEADERS.items():
+            self.assertEqual(expected_value, response.headers.get(header))
+
     def test_root_get_sets_basic_security_headers(self):
         response = self.client.get("/")
 
@@ -87,6 +100,34 @@ class FlaskSampleTests(unittest.TestCase):
                 response = client.getresponse()
                 self.assertEqual(200, response.status)
                 self.assertIn(b"Hello", response.read())
+                for header, expected_value in BASIC_SECURITY_HEADERS.items():
+                    self.assertEqual(expected_value, response.headers.get(header))
+            finally:
+                client.close()
+        finally:
+            server.shutdown()
+            server_thread.join(timeout=2)
+            server.server_close()
+
+        self.assertFalse(server_thread.is_alive())
+
+    def test_live_http_static_path_is_hardened_not_found_response(self):
+        server = make_server(
+            "127.0.0.1",
+            0,
+            app,
+            request_handler=SilentRequestHandler,
+        )
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.start()
+
+        try:
+            client = HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+            try:
+                client.request("GET", "/static/app.js")
+                response = client.getresponse()
+                self.assertEqual(404, response.status)
+                response.read()
                 for header, expected_value in BASIC_SECURITY_HEADERS.items():
                     self.assertEqual(expected_value, response.headers.get(header))
             finally:
