@@ -26,6 +26,7 @@ AUTHORITATIVE_HEADERS_PLAN="$ROOT_DIR/docs/plans/2026-06-13-authoritative-securi
 COMPLETE_ISOLATION_PLAN="$ROOT_DIR/docs/plans/2026-06-13-complete-cross-origin-isolation.md"
 LOCATION_INDEPENDENT_MAKE_PLAN="$ROOT_DIR/docs/plans/2026-06-13-location-independent-make.md"
 LIVE_HTTP_SECURITY_PLAN="$ROOT_DIR/docs/plans/2026-06-15-live-http-security-headers.md"
+HASH_LOCK_PLAN="$ROOT_DIR/docs/plans/2026-06-16-hash-verified-dependency-lock.md"
 LIVE_HTTP_SECURITY_CHECK="$ROOT_DIR/scripts/check-live-http-security.py"
 PYTHON=${PYTHON:-python3}
 
@@ -47,6 +48,7 @@ for path in \
   "VISION.md" \
   "app.py" \
   "constraints.txt" \
+  "requirements.lock" \
   "requirements.txt" \
   "templates/hello.html" \
   "tests/test_app.py" \
@@ -64,6 +66,7 @@ for path in \
   "docs/plans/2026-06-13-complete-cross-origin-isolation.md" \
   "docs/plans/2026-06-13-location-independent-make.md" \
   "docs/plans/2026-06-15-live-http-security-headers.md" \
+  "docs/plans/2026-06-16-hash-verified-dependency-lock.md" \
   "docs/plans/2026-06-09-flask-debug-value-normalization.md" \
   "docs/plans/2026-06-09-flask-loopback-debug-guard.md" \
   "docs/plans/2026-06-09-clickjacking-header.md" \
@@ -326,6 +329,72 @@ if [ "$actual_constraints" != "$expected_constraints" ]; then
   exit 1
 fi
 
+python3 - "$ROOT_DIR/constraints.txt" "$ROOT_DIR/requirements.lock" <<'PY'
+import hashlib
+import re
+import sys
+from pathlib import Path
+
+
+def normalize(name):
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+constraints = {}
+for line in Path(sys.argv[1]).read_text().splitlines():
+    line = line.strip()
+    if not line or line.startswith("#"):
+        continue
+    name, version = line.split("==", 1)
+    constraints[normalize(name)] = version
+
+lock_text = Path(sys.argv[2]).read_text()
+expected_lock_sha256 = "a36c01fae3da0af4ae4dcafe415cc7f38a5143b17f5ff6a6c3bc5e66bc8bc3ce"
+if hashlib.sha256(lock_text.encode()).hexdigest() != expected_lock_sha256:
+    raise SystemExit("requirements.lock must match the reviewed universal artifact set exactly.")
+if any(token in lock_text.lower() for token in ("--index-url", "--extra-index-url", "--trusted-host", "http://", "https://")):
+    raise SystemExit("requirements.lock must not embed package index or network locations.")
+
+entries = []
+current = ""
+for raw_line in lock_text.splitlines():
+    line = raw_line.strip()
+    if not line or line.startswith("#"):
+        continue
+    current = f"{current} {line}".strip()
+    if current.endswith("\\"):
+        current = current[:-1].rstrip()
+        continue
+    entries.append(current)
+    current = ""
+if current:
+    raise SystemExit("requirements.lock ends with an incomplete continuation.")
+
+locked = {}
+markers = {}
+for entry in entries:
+    match = re.match(r"^([A-Za-z0-9_.-]+)==([^ ;]+)(?:\s*;\s*([^\\]+?))?\s+--hash=", entry)
+    if not match:
+        raise SystemExit(f"Unparseable hash-locked requirement: {entry}")
+    name = normalize(match.group(1))
+    if name in locked:
+        raise SystemExit(f"Duplicate locked requirement: {name}")
+    hashes = re.findall(r"--hash=sha256:([0-9a-f]{64})(?:\s|$)", entry)
+    if not hashes or len(hashes) != len(set(hashes)):
+        raise SystemExit(f"Locked requirement must have unique SHA-256 hashes: {name}")
+    locked[name] = match.group(2)
+    markers[name] = (match.group(3) or "").strip()
+
+expected = dict(constraints)
+expected["colorama"] = "0.4.6"
+if locked != expected:
+    raise SystemExit(f"requirements.lock graph mismatch: expected {expected}, found {locked}")
+if markers["colorama"] != "sys_platform == 'win32'":
+    raise SystemExit("colorama must remain restricted to the Windows marker.")
+if any(markers[name] for name in constraints):
+    raise SystemExit("Reviewed cross-platform constraints must not gain environment markers.")
+PY
+
 if ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
   ! grep -Fq "cancel-in-progress: true" "$CI_WORKFLOW" ||
   ! grep -Fq "runs-on: ubuntu-24.04" "$CI_WORKFLOW" ||
@@ -333,9 +402,10 @@ if ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" ||
   ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
   ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
   ! grep -Fq "python -m pip install --upgrade pip==26.1.2" "$CI_WORKFLOW" ||
-  ! grep -Fq "python -m pip install -r requirements.txt -c constraints.txt" "$CI_WORKFLOW" ||
+  ! grep -Fq "python -m pip install --require-hashes -r requirements.lock" "$CI_WORKFLOW" ||
   ! grep -Fq "cache-dependency-path:" "$CI_WORKFLOW" ||
   ! grep -Fq "constraints.txt" "$CI_WORKFLOW" ||
+  ! grep -Fq "requirements.lock" "$CI_WORKFLOW" ||
   ! grep -Fq "python -m pip check" "$CI_WORKFLOW" ||
   ! grep -Fq "make check" "$CI_WORKFLOW"; then
   printf '%s\n' "GitHub Actions must keep the pinned multi-version Flask check contract." >&2
@@ -348,10 +418,11 @@ from pathlib import Path
 
 workflow = Path(sys.argv[1]).read_text()
 bootstrap = "python -m pip install --upgrade pip==26.1.2"
-install = "python -m pip install -r requirements.txt -c constraints.txt"
+install = "python -m pip install --require-hashes -r requirements.lock"
 cache_block = """          cache-dependency-path: |
             requirements.txt
-            constraints.txt"""
+            constraints.txt
+            requirements.lock"""
 if workflow.count(bootstrap) != 1:
     raise SystemExit("GitHub Actions must bootstrap exactly one pinned pip version.")
 if "python -m pip install --upgrade pip\n" in workflow:
@@ -360,7 +431,7 @@ if workflow.count("python -m pip install --upgrade pip") != 1:
     raise SystemExit("GitHub Actions must not add duplicate or alternate pip bootstraps.")
 if workflow.count(install) != 1 or workflow.count(cache_block) != 1:
     raise SystemExit(
-        "GitHub Actions must install once through constraints and cache both dependency files."
+        "GitHub Actions must install once through the hash lock and cache all dependency files."
     )
 PY
 
@@ -378,6 +449,39 @@ if ! grep -Fq "pip 26.1.2" "$ROOT_DIR/README.md" ||
   ! grep -Fq "exact pip bootstrap" "$ROOT_DIR/VISION.md" ||
   ! grep -Fq "Pinned the hosted pip bootstrap" "$ROOT_DIR/CHANGES.md"; then
   printf '%s\n' "Repository guidance must document the pinned pip bootstrap boundary." >&2
+  exit 1
+fi
+
+hash_lock_completed_statuses=$(grep -c '^Status: Completed$' "$HASH_LOCK_PLAN" || true)
+hash_lock_all_statuses=$(grep -c '^Status:' "$HASH_LOCK_PLAN" || true)
+hash_lock_verification=$(awk '
+  /^## Verification Results$/ { in_verification = 1; next }
+  in_verification && /^## / { exit }
+  in_verification { print }
+' "$HASH_LOCK_PLAN")
+if [ "$hash_lock_completed_statuses" -ne 1 ] || [ "$hash_lock_all_statuses" -ne 1 ]; then
+  printf '%s\n' "Hash-lock plan must record exactly one completed status." >&2
+  exit 1
+fi
+for hash_lock_evidence in \
+  'Python 3.12' \
+  'Python 3.14' \
+  'external-directory `make check`' \
+  'hostile mutations'; do
+  if ! printf '%s\n' "$hash_lock_verification" | grep -Fq "$hash_lock_evidence"; then
+    printf '%s\n' "Hash-lock plan must record completed verification: $hash_lock_evidence" >&2
+    exit 1
+  fi
+done
+hash_lock_guidance='`requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.'
+for hash_lock_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq "$hash_lock_guidance" "$ROOT_DIR/$hash_lock_doc"; then
+    printf '%s\n' "$hash_lock_doc must document the hash-verified dependency lock." >&2
+    exit 1
+  fi
+done
+if printf '%s\n' "$hash_lock_verification" | grep -Eiq '(^|[^[:alnum:]_])(pending|todo|tbd|not run)([^[:alnum:]_]|$)'; then
+  printf '%s\n' "Hash-lock verification must not contain placeholders." >&2
   exit 1
 fi
 
@@ -465,7 +569,7 @@ if ! grep -Fq "does not persist checkout credentials" "$ROOT_DIR/README.md"; the
 fi
 
 if ! grep -Fq "read-only repository permissions" "$ROOT_DIR/SECURITY.md" ||
-  ! grep -Fq 'Dependency manifests detected: `requirements.txt` and `constraints.txt`.' "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq 'Dependency manifests detected: `requirements.txt`, `constraints.txt`, and `requirements.lock`.' "$ROOT_DIR/SECURITY.md" ||
   ! grep -Fq "Python 3.10, 3.12, and 3.14" "$ROOT_DIR/CHANGES.md" ||
   ! grep -Fq "docs/plans/2026-06-10-ci-baseline.md" "$ROOT_DIR/README.md"; then
   printf '%s\n' "Project docs must record the hosted Python compatibility baseline." >&2

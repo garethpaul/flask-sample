@@ -52,7 +52,7 @@ Helpful reports include:
   `make check` baseline as local development without persisting checkout
   credentials; do not add secrets or deployment steps without a separate
   security review.
-- Dependency manifests detected: `requirements.txt` and `constraints.txt`.
+- Dependency manifests detected: `requirements.txt`, `constraints.txt`, and `requirements.lock`.
   Review dependency range
   changes deliberately and keep hosted compatibility checks green.
 - The supported framework line is Flask `>=3.1.3,<3.2`; the lower bound keeps
@@ -67,10 +67,11 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
 
-GitHub Actions applies the exact versions in `constraints.txt` on Python 3.10,
-3.12, and 3.14 while `requirements.txt` retains the supported Flask 3.1 range.
-This freezes reviewed version resolution; it is not a hash lock and does not
-authenticate package artifacts.
+GitHub Actions installs `requirements.lock` with `--require-hashes` on Python
+3.10, 3.12, and 3.14 while `requirements.txt` retains the supported Flask 3.1
+range. The lock authenticates accepted artifacts and `constraints.txt` keeps
+the reviewed seven-package cross-platform graph readable.
+`requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.
 The hosted workflow also uses a pinned installer bootstrap. Keep that version
 explicit and review compatibility across the complete Python matrix when it is
 updated.

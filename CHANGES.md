@@ -1,5 +1,9 @@
 # Changes
 
+- Added `requirements.lock` and made hosted Python 3.10, 3.12, and 3.14
+  installs reject package artifacts that are not covered by its SHA-256 hashes.
+- `requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.
+
 ## 2026-06-15
 
 - Added loopback HTTP integration coverage that verifies the rendered root and

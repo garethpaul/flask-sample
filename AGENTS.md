@@ -17,7 +17,7 @@ default response headers.
 
 ## Development commands
 
-- Install dependencies: `python3 -m pip install -r requirements.txt -c constraints.txt`
+- Install dependencies: `python3 -m pip install --require-hashes -r requirements.lock`
 - Full baseline: `make check`
 - Lint/static checks: `make lint`
 - Tests: `make test`
@@ -30,6 +30,9 @@ default response headers.
   3.14 compatibility matrix.
 - Keep `constraints.txt` aligned with the reviewed CI graph without narrowing
   the compatibility range in `requirements.txt`.
+- Regenerate `requirements.lock` with hashes whenever the reviewed constraints
+  change, and keep hosted installs in `--require-hashes` mode.
+- `requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.
 - Prefer dependency-free tests or stdlib checks when legacy packages are unavailable.
 
 ## Testing guidance

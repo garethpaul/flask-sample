@@ -15,6 +15,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 - `app.py`
 - `requirements.txt` - Flask dependency compatibility range
 - `constraints.txt` - reviewed exact dependency graph used by CI
+- `requirements.lock` - universal hash-verified install graph used by CI
 - `Makefile` and `scripts/check-baseline.sh` - local verification commands
 - `SECURITY.md` - security reporting and disclosure guidance
 - `templates` - source or example code
@@ -24,7 +25,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 Additional scan context:
 
 - Source directories: templates
-- Dependency and build manifests: `requirements.txt`, `constraints.txt`
+- Dependency and build manifests: `requirements.txt`, `constraints.txt`, `requirements.lock`
 - Entry points or build surfaces: app.py
 - Test-looking files: no obvious test files detected
 
@@ -43,7 +44,7 @@ git clone https://github.com/garethpaul/flask-sample.git
 cd flask-sample
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt -c constraints.txt
+python -m pip install --require-hashes -r requirements.lock
 ```
 
 The setup commands above are derived from repository files. Legacy mobile, Python, or JavaScript samples may require older SDKs or package versions than a modern workstation uses by default.
@@ -101,18 +102,20 @@ The `make lint`, `make test`, and `make build` aliases run the same local
 baseline or unit tests while this sample has no narrower installed gates.
 The test suite also starts an ephemeral loopback-only Werkzeug server and
 verifies the rendered root plus every managed security header over live HTTP.
-GitHub Actions installs `requirements.txt`, verifies dependency consistency,
+GitHub Actions installs `requirements.lock` with `--require-hashes`, verifies dependency consistency,
 and runs `make check` on Python 3.10, 3.12, and 3.14 for pull requests and
 pushes. The runtime requirement stays within Flask 3.1 (`>=3.1.3,<3.2`) so the
 sample receives current security fixes without silently crossing a future
 feature-series boundary. The workflow uses read-only repository permissions and
 does not persist checkout credentials.
 
-Hosted installs also apply `constraints.txt` to freeze the reviewed Flask and
-transitive package versions across the matrix. The constraints preserve the
-public Flask range but do not authenticate downloaded artifacts with hashes.
+Hosted installs use `requirements.lock` to freeze and hash-verify the reviewed
+Flask graph across the matrix. It preserves the public Flask range and the
+seven exact cross-platform pins in `constraints.txt`, plus conditional
+`colorama` metadata for Windows portability.
 Hosted installation bootstraps exact `pip 26.1.2` before applying those files,
 avoiding a floating installer input across the Python matrix.
+`requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 

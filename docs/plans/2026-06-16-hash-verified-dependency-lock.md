@@ -1,6 +1,6 @@
 # Hash-Verify the Flask Dependency Lock
 
-Status: Planned
+Status: Completed
 
 ## Context
 
@@ -12,7 +12,8 @@ the application tests run.
 
 ## Goals
 
-- Generate a universal lock for the existing seven-package Flask graph.
+- Generate a universal lock for the existing seven reviewed cross-platform
+  packages plus marker-only Windows `colorama` metadata.
 - Include hashes for the compatible distributions needed across the declared
   Python matrix.
 - Install CI dependencies with pip's `--require-hashes` enforcement.
@@ -43,7 +44,8 @@ the application tests run.
 ## Validation
 
 - Parse the generated lock and prove all seven reviewed packages remain pinned
-  to the exact `constraints.txt` versions with at least one SHA-256 hash each.
+  to the exact `constraints.txt` versions with at least one SHA-256 hash each,
+  while `colorama` remains conditional on Windows.
 - Install the lock with `--require-hashes` in clean Python 3.12 and 3.14 virtual
   environments and run `python -m pip check` plus the test suite.
 - Run `sh -n scripts/check-baseline.sh` and the focused dependency contracts.
@@ -62,3 +64,22 @@ the application tests run.
   version change.
 - PR #12 will be stacked on open PR #11 and requires base-first ordering;
   neither pull request may be merged or closed without explicit authorization.
+
+## Verification Results
+
+Completed on 2026-06-16:
+
+- `uv pip compile --universal --python-version 3.10 --generate-hashes`
+  produced the reviewed lock without index URLs or machine-specific headers.
+- Clean Python 3.12 and Python 3.14 environments installed through
+  `pip --require-hashes`, reported no broken requirements, and resolved Flask
+  3.1.3.
+- All 17 unit tests and the live HTTP security contract passed under both
+  Python 3.12 and Python 3.14.
+- Repository and external-directory `make check` passed the complete runtime,
+  lock-integrity, workflow, documentation, and plan gates.
+- Seven hostile mutations were rejected across package hashes, required-hash
+  installation, cache inputs, version parity, guidance, completed status, and
+  verification evidence.
+- Exact diff, generated-artifact, dependency-version, credential-pattern,
+  conflict-marker, mode, and whitespace audits passed before commit.

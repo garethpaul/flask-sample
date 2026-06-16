@@ -59,6 +59,10 @@ Current baseline:
   verification covers the declared Flask range.
 - The declared runtime uses the patched Flask 3.1 line (`>=3.1.3,<3.2`) and a
   route test verifies the installed framework remains inside that boundary.
+- Hosted installs enforce universal SHA-256 `requirements.lock` data for the
+  seven reviewed cross-platform packages and marker-only Windows `colorama`
+  metadata.
+- `requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.
 - Python environments, bytecode, and `.env` files are ignored.
 
 Next priorities:
@@ -82,6 +86,7 @@ Next priorities:
   error handlers, or extensions
 - Keep the hosted CI workflow aligned with `make check`
 - Keep the exact pip bootstrap compatible with every hosted Python version
+- Keep the hash lock aligned with the reviewed constraints and hosted matrix
 
 Contribution rules:
 
