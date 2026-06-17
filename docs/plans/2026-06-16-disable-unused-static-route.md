@@ -87,5 +87,6 @@ HTTP surface and its verification boundary.
   completion evidence.
 - Python and shell syntax, generated-artifact cleanup, executable modes,
   changed-line credential scans, and `git diff --check` passed.
-- The hosted pull-request check is required for exact-head delivery evidence;
-  no reverse-proxy, TLS, browser, or production deployment result is claimed.
+- Push run `27646069938` and pull-request run `27646082902` passed at
+  implementation commit `bb862303b6f519f59ee389d96596c216e228923b`.
+- No reverse-proxy, TLS, browser, or production deployment result is claimed.

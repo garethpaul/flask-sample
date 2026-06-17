@@ -109,7 +109,9 @@ required = (
     "all four Make gates passed",
     "absolute Makefile path passed",
     "six hostile mutations were rejected",
-    "hosted pull-request check",
+    "Push run `27646069938`",
+    "pull-request run `27646082902`",
+    "`bb862303b6f519f59ee389d96596c216e228923b`",
 )
 if (
     re.findall(r"^status: .+$", frontmatter, flags=re.MULTILINE) != ["status: completed"]
