@@ -34,6 +34,8 @@ Helpful reports include:
   not exposed on public host bindings.
 - `FLASK_DEBUG` values should be trimmed and case-normalized before checking
   the opt-in allowlist.
+- Imported WSGI applications keep debug mode off regardless of ambient
+  `FLASK_DEBUG`; only the guarded local development entry point may enable it.
 - Response headers should keep explicit object, base URL, form-action, and
   frame-ancestor Content-Security-Policy boundaries unless a documented need
   changes them.
@@ -44,6 +46,8 @@ Helpful reports include:
 - Flask `TRUSTED_HOSTS` should reject unexpected request Host headers and must
   not treat wildcard bind addresses as trusted hostnames. See Flask's official
   guidance: https://flask.palletsprojects.com/en/stable/web-security/#host-header-validation
+- The sample intentionally ignores `X-Forwarded-Host`; deployments that add
+  proxy middleware must trust only a known proxy hop before honoring it.
 - Response headers should keep unused browser capabilities disabled with
   `Permissions-Policy` unless a documented feature needs them.
 - Embedder, opener, and resource policies should remain `require-corp`,

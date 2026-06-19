@@ -1,5 +1,13 @@
 # Changes
 
+## 2026-06-19
+
+- Prevented ambient `FLASK_DEBUG` from enabling debug state when a production
+  WSGI server imports the application; local `python app.py` debugging remains
+  opt-in and loopback-only.
+- Added live HTTP proof that direct untrusted Host headers are rejected and
+  forwarded-host headers are ignored without explicit trusted-proxy middleware.
+
 - Disabled Flask's unused default static endpoint and added test-client plus
   live-HTTP regressions for hardened static-path 404 responses.
 

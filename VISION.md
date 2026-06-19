@@ -34,6 +34,8 @@ Current baseline:
   default method handling.
 - Debug mode is controlled by `FLASK_DEBUG` instead of being hardcoded, and it
   is enabled only for loopback host bindings.
+- WSGI imports remain non-debug; only the explicit local development entry
+  point evaluates the guarded debug opt-in.
 - `FLASK_DEBUG` values are trimmed and case-normalized before the opt-in
   allowlist is checked.
 - Local execution binds to `127.0.0.1` unless the developer explicitly sets

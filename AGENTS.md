@@ -57,6 +57,8 @@ endpoint, and keep static-path 404 responses under the shared header policy.
 - No required secret or credential file is needed. Keep `.env` files local if future integrations add configuration.
 - Debug mode is local-only. Do not expose the Werkzeug debugger on a public interface.
 - `FLASK_DEBUG` should only enable debug mode for loopback host bindings.
+- Imported WSGI applications must stay non-debug; evaluate `FLASK_DEBUG` only
+  in the guarded local development-server entry point.
 - Keep response headers such as `X-Content-Type-Options` and `Referrer-Policy` in place when adding routes.
 - Keep the shared response hook authoritative for managed security headers; do
   not preserve weaker values supplied by routes, error handlers, or extensions.

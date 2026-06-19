@@ -174,11 +174,12 @@ fi
 if ! grep -Fq "def debug_allowed_for_host" "$ROOT_DIR/app.py" ||
   ! grep -Fq ".is_loopback" "$ROOT_DIR/app.py" ||
   ! grep -Fq 'host == "localhost"' "$ROOT_DIR/app.py" ||
-  ! grep -Fq "app.debug = debug_allowed_for_host(host_name())" "$ROOT_DIR/app.py" ||
+  ! grep -Fq "app.debug = False" "$ROOT_DIR/app.py" ||
   ! grep -Fq "debug=debug_allowed_for_host(host)" "$ROOT_DIR/app.py" ||
   ! grep -Fq "test_debug_flag_requires_loopback_host" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "test_wsgi_import_never_enables_debug_mode" "$ROOT_DIR/tests/test_app.py" ||
   ! grep -Fq "example.com" "$ROOT_DIR/tests/test_app.py"; then
-  printf '%s\n' "Flask debug mode must remain loopback-only when enabled." >&2
+  printf '%s\n' "Flask debug mode must remain import-safe and loopback-only when enabled." >&2
   exit 1
 fi
 
@@ -637,6 +638,15 @@ if ! grep -Fq "make check" "$ROOT_DIR/README.md" ||
   ! grep -Fq "requirements.txt" "$ROOT_DIR/README.md" ||
   ! grep -Fq "constraints.txt" "$ROOT_DIR/README.md"; then
   printf '%s\n' "README must document setup, debug posture, GET-only route behavior, PORT fallback, and verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "WSGI imports always force debug mode off" "$ROOT_DIR/README.md" ||
+  ! grep -Fq "Imported WSGI applications keep debug mode off" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "WSGI imports remain non-debug" "$ROOT_DIR/VISION.md" ||
+  ! grep -Fq 'Prevented ambient `FLASK_DEBUG`' "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "Imported WSGI applications must stay non-debug" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "Repository guidance must document the import-safe debug boundary." >&2
   exit 1
 fi
 

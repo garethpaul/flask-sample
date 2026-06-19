@@ -95,7 +95,7 @@ def trusted_hosts(value=None):
 
 
 app.config["TRUSTED_HOSTS"] = trusted_hosts()
-app.debug = debug_allowed_for_host(host_name())
+app.debug = False
 
 
 @app.after_request

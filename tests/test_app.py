@@ -1,7 +1,11 @@
+import os
+import subprocess
+import sys
 import threading
 import unittest
 from http.client import HTTPConnection
 from importlib.metadata import version
+from pathlib import Path
 
 from werkzeug.serving import WSGIRequestHandler, make_server
 
@@ -139,6 +143,49 @@ class FlaskSampleTests(unittest.TestCase):
 
         self.assertFalse(server_thread.is_alive())
 
+    def test_live_http_validates_host_and_ignores_forwarded_host(self):
+        server = make_server(
+            "127.0.0.1",
+            0,
+            app,
+            request_handler=SilentRequestHandler,
+        )
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.start()
+
+        try:
+            client = HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+            try:
+                client.putrequest("GET", "/", skip_host=True)
+                client.putheader("Host", "attacker.example")
+                client.putheader("X-Forwarded-Host", "127.0.0.1")
+                client.endheaders()
+                response = client.getresponse()
+                self.assertEqual(400, response.status)
+                response.read()
+                for header, expected_value in BASIC_SECURITY_HEADERS.items():
+                    self.assertEqual(expected_value, response.headers.get(header))
+            finally:
+                client.close()
+
+            client = HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+            try:
+                client.putrequest("GET", "/", skip_host=True)
+                client.putheader("Host", "127.0.0.1")
+                client.putheader("X-Forwarded-Host", "attacker.example")
+                client.endheaders()
+                response = client.getresponse()
+                self.assertEqual(200, response.status)
+                response.read()
+            finally:
+                client.close()
+        finally:
+            server.shutdown()
+            server_thread.join(timeout=2)
+            server.server_close()
+
+        self.assertFalse(server_thread.is_alive())
+
     def test_security_header_hook_overrides_weaker_existing_values(self):
         response = app.response_class("Hello")
         for header in BASIC_SECURITY_HEADERS:
@@ -228,6 +275,25 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertFalse(debug_allowed_for_host("0.0.0.0", "1"))
         self.assertFalse(debug_allowed_for_host("example.com", "1"))
         self.assertFalse(debug_allowed_for_host("127.0.0.1", "0"))
+
+    def test_wsgi_import_never_enables_debug_mode(self):
+        environment = os.environ.copy()
+        environment.update(
+            {
+                "FLASK_DEBUG": "1",
+                "FLASK_RUN_HOST": "127.0.0.1",
+            }
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", "from app import app; print(app.debug)"],
+            cwd=Path(__file__).resolve().parents[1],
+            env=environment,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual("False", result.stdout.strip())
 
     def test_invalid_port_values_fall_back_to_default(self):
         self.assertEqual(5000, port_number(""))

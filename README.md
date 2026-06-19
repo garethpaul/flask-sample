@@ -60,6 +60,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - The root route is GET-only and renders `templates/hello.html`.
 - Set `FLASK_DEBUG=1` only for local debugging; debug mode is enabled only when
   the resolved bind host is loopback.
+- WSGI imports always force debug mode off; the environment flag is evaluated
+  only by the guarded `python app.py` development-server path.
 - `FLASK_DEBUG` values are trimmed and case-normalized before matching `1`,
   `true`, `yes`, or `on`.
 - Set `FLASK_RUN_HOST` or `PORT` locally when you need a different bind host or
@@ -84,12 +86,16 @@ Verification resolves both the checker and unittest discovery paths relative to
 the loaded Makefile rather than the caller's directory.
 
 The baseline compiles the app, runs the route tests, and verifies debug mode is
-opt-in rather than hardcoded and remains loopback-only when enabled. It also
+off for imported WSGI applications, opt-in for local startup, and loopback-only
+when enabled. It also
 verifies `FLASK_DEBUG` value normalization before the opt-in check, the
 GET-only root route, and startup port parsing fallback for invalid local
 environment values. Blank or malformed host values also fall back to localhost.
 Flask 3.1 `TRUSTED_HOSTS` validation accepts loopback request hosts and a
 validated concrete bind host while excluding wildcard bind addresses.
+Live HTTP coverage also proves that an untrusted direct `Host` is rejected and
+that `X-Forwarded-Host` is ignored because this sample does not install trusted
+proxy middleware.
 Responses include basic security headers for content sniffing, clickjacking
 protection, referrer policy, and a Content-Security-Policy with a default-deny
 subresource policy that also blocks plugin objects, base URL rewriting,
@@ -134,8 +140,12 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Debug mode is local-only. Do not expose the Werkzeug debugger on a public
   interface.
 - `FLASK_DEBUG` should only enable debug mode for loopback host bindings.
+- Imported WSGI applications remain non-debug even when `FLASK_DEBUG` is set;
+  use the guarded local entry point for development debugging.
 - Keep Flask `TRUSTED_HOSTS` aligned with validated bind hosts, and do not trust
   wildcard addresses as request Host values.
+- Do not enable forwarded-host middleware without an explicit trusted-proxy
+  deployment boundary; direct `Host` validation is authoritative by default.
 - Keep response headers such as `X-Content-Type-Options` and `Referrer-Policy`
   in place when adding routes.
 - Keep `X-Frame-Options: DENY` in place unless a documented embedding use case

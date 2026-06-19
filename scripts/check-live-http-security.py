@@ -27,6 +27,10 @@ def main(test_path: Path, plan_path: Path) -> None:
         source,
         "test_live_http_static_path_is_hardened_not_found_response",
     )
+    live_host_test = test_body(
+        source,
+        "test_live_http_validates_host_and_ignores_forwarded_host",
+    )
     plan = plan_path.read_text(encoding="utf-8")
 
     contracts = (
@@ -88,6 +92,23 @@ def main(test_path: Path, plan_path: Path) -> None:
     )
     for value, message in static_contracts:
         require(live_static_test, value, message)
+
+    host_contracts = (
+        ('client.putheader("Host", "attacker.example")', "Live host test must send an untrusted Host header."),
+        (
+            'client.putheader("X-Forwarded-Host", "127.0.0.1")',
+            "Live host test must prove forwarded host values are not implicitly trusted.",
+        ),
+        ("self.assertEqual(400, response.status)", "Live host test must reject the untrusted Host header."),
+        ('client.putheader("Host", "127.0.0.1")', "Live host test must send a trusted direct Host header."),
+        (
+            'client.putheader("X-Forwarded-Host", "attacker.example")',
+            "Live host test must prove spoofed forwarded hosts are ignored.",
+        ),
+        ("self.assertEqual(200, response.status)", "Live host test must accept the trusted direct Host header."),
+    )
+    for value, message in host_contracts:
+        require(live_host_test, value, message)
 
     require(
         source,
