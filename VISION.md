@@ -12,6 +12,10 @@ handling, templates, and local development.
 The goal is to keep the sample simple, runnable, and honest about its debug
 development posture.
 
+The HTTP surface remains intentional: because the sample serves no static
+assets, Flask's default static endpoint stays disabled and covered by live
+response tests.
+
 The current focus is:
 
 Priority:
@@ -30,6 +34,8 @@ Current baseline:
   default method handling.
 - Debug mode is controlled by `FLASK_DEBUG` instead of being hardcoded, and it
   is enabled only for loopback host bindings.
+- WSGI imports remain non-debug; only the explicit local development entry
+  point evaluates the guarded debug opt-in.
 - `FLASK_DEBUG` values are trimmed and case-normalized before the opt-in
   allowlist is checked.
 - Local execution binds to `127.0.0.1` unless the developer explicitly sets
@@ -47,6 +53,11 @@ Current baseline:
   base URL, form-action, and framing boundaries.
 - Responses include a Permissions-Policy that disables unused camera,
   microphone, and geolocation capabilities.
+- Successful and error responses retain embedder, opener, and resource policies
+  through the shared after-request boundary, completing isolation for the
+  asset-free page.
+- The shared response boundary authoritatively replaces weaker preexisting
+  values for every managed security header.
 - `make lint`, `make test`, and `make build` run the local baseline or unit
   tests while this sample has no narrower installed gates.
 - GitHub Actions runs dependency consistency checks and `make check` on Python
@@ -54,6 +65,10 @@ Current baseline:
   verification covers the declared Flask range.
 - The declared runtime uses the patched Flask 3.1 line (`>=3.1.3,<3.2`) and a
   route test verifies the installed framework remains inside that boundary.
+- Hosted installs enforce universal SHA-256 `requirements.lock` data for the
+  seven reviewed cross-platform packages and marker-only Windows `colorama`
+  metadata.
+- `requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.
 - Python environments, bytecode, and `.env` files are ignored.
 
 Next priorities:
@@ -71,7 +86,13 @@ Next priorities:
 - Keep the CSP updated if templates begin loading external assets
 - Keep unused browser capabilities disabled unless the sample gains a feature
   that needs them
+- Keep embedder, opener, and resource policies covered across 400, 404, and 405
+  responses
+- Keep managed security-header assignment authoritative when adding routes,
+  error handlers, or extensions
 - Keep the hosted CI workflow aligned with `make check`
+- Keep the exact pip bootstrap compatible with every hosted Python version
+- Keep the hash lock aligned with the reviewed constraints and hosted matrix
 
 Contribution rules:
 

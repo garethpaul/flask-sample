@@ -1,7 +1,49 @@
 # Changes
 
+## 2026-06-19
+
+- Prevented ambient `FLASK_DEBUG` from enabling debug state when a production
+  WSGI server imports the application; local `python app.py` debugging remains
+  opt-in and loopback-only.
+- Added live HTTP proof that direct untrusted Host headers are rejected and
+  forwarded-host headers are ignored without explicit trusted-proxy middleware.
+
+- Disabled Flask's unused default static endpoint and added test-client plus
+  live-HTTP regressions for hardened static-path 404 responses.
+
+- Added `requirements.lock` and made hosted Python 3.10, 3.12, and 3.14
+  installs reject package artifacts that are not covered by its SHA-256 hashes.
+- `requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.
+
+## 2026-06-15
+
+- Added loopback HTTP integration coverage that verifies the rendered root and
+  every managed security header across the live WSGI response boundary.
+
+## 2026-06-13
+
+- Made Flask verification independent of the caller's working directory by
+  rooting both the checker and unittest discovery paths in the loaded Makefile.
+- Completed the cross-origin isolation boundary with an authoritative
+  `Cross-Origin-Embedder-Policy: require-corp` header.
+- Covered the exact embedder, opener, and resource policies on successful and
+  error responses with mutation-sensitive static contracts.
+- Made the shared response hook replace weaker preexisting values for every
+  managed security header.
+- Added a full-map regression and static contract for authoritative header
+  assignment.
+- Added same-origin opener and resource policies to the shared Flask response
+  security-header map.
+- Added full security-header regression coverage for 400, 404, and 405
+  responses.
+
 ## 2026-06-12
 
+- Pinned the hosted pip bootstrap to 26.1.2 and added exact workflow, plan, and
+  documentation contracts that reject floating or duplicate installer upgrades.
+- Added a reviewed seven-package constraints graph shared by Python 3.10,
+  3.12, and 3.14, wired it into hosted installs and pip cache invalidation, and
+  added exact dependency, workflow, documentation, and plan contracts.
 - Upgraded the runtime contract from legacy Flask 2.x compatibility to the
   patched Flask 3.1 line (`>=3.1.3,<3.2`).
 - Added installed-version, dependency-range, route, and security-header

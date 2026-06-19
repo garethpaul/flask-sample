@@ -7,6 +7,10 @@
 
 `garethpaul/flask-sample` is a static web project. Flask sample
 
+The application serves no static assets and explicitly disables Flask's default
+`/static/<path>` endpoint. Requests under that path return a normal hardened
+`404` with the same authoritative security headers as every other response.
+
 This README is based on the checked-in source, manifests, scripts, and repository metadata on the `master` branch. The project language mix found during review was: Python (1).
 
 ## Repository Contents
@@ -14,6 +18,8 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 - `README.md` - project overview and local usage notes
 - `app.py`
 - `requirements.txt` - Flask dependency compatibility range
+- `constraints.txt` - reviewed exact dependency graph used by CI
+- `requirements.lock` - universal hash-verified install graph used by CI
 - `Makefile` and `scripts/check-baseline.sh` - local verification commands
 - `SECURITY.md` - security reporting and disclosure guidance
 - `templates` - source or example code
@@ -23,7 +29,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 Additional scan context:
 
 - Source directories: templates
-- Dependency and build manifests: none detected
+- Dependency and build manifests: `requirements.txt`, `constraints.txt`, `requirements.lock`
 - Entry points or build surfaces: app.py
 - Test-looking files: no obvious test files detected
 
@@ -42,7 +48,7 @@ git clone https://github.com/garethpaul/flask-sample.git
 cd flask-sample
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install --require-hashes -r requirements.lock
 ```
 
 The setup commands above are derived from repository files. Legacy mobile, Python, or JavaScript samples may require older SDKs or package versions than a modern workstation uses by default.
@@ -54,6 +60,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - The root route is GET-only and renders `templates/hello.html`.
 - Set `FLASK_DEBUG=1` only for local debugging; debug mode is enabled only when
   the resolved bind host is loopback.
+- WSGI imports always force debug mode off; the environment flag is evaluated
+  only by the guarded `python app.py` development-server path.
 - `FLASK_DEBUG` values are trimmed and case-normalized before matching `1`,
   `true`, `yes`, or `on`.
 - Set `FLASK_RUN_HOST` or `PORT` locally when you need a different bind host or
@@ -73,27 +81,51 @@ Run the baseline:
 make check
 ```
 
+Use the absolute Makefile path to run every gate from another working directory.
+Verification resolves both the checker and unittest discovery paths relative to
+the loaded Makefile rather than the caller's directory.
+
 The baseline compiles the app, runs the route tests, and verifies debug mode is
-opt-in rather than hardcoded and remains loopback-only when enabled. It also
+off for imported WSGI applications, opt-in for local startup, and loopback-only
+when enabled. It also
 verifies `FLASK_DEBUG` value normalization before the opt-in check, the
 GET-only root route, and startup port parsing fallback for invalid local
 environment values. Blank or malformed host values also fall back to localhost.
 Flask 3.1 `TRUSTED_HOSTS` validation accepts loopback request hosts and a
 validated concrete bind host while excluding wildcard bind addresses.
+Live HTTP coverage also proves that an untrusted direct `Host` is rejected and
+that `X-Forwarded-Host` is ignored because this sample does not install trusted
+proxy middleware.
 Responses include basic security headers for content sniffing, clickjacking
 protection, referrer policy, and a Content-Security-Policy with a default-deny
 subresource policy that also blocks plugin objects, base URL rewriting,
 cross-origin form targets, and framing. It keeps a `Permissions-Policy` header
 that disables unused camera, microphone, and geolocation capabilities.
+Cross-origin embedder, opener, and resource policies also apply to successful
+and error responses. The `require-corp` embedder policy completes the isolation
+boundary for the asset-free page; future cross-origin assets require deliberate
+compatibility review. The hook authoritatively replaces weaker preexisting
+values for every managed header name; an upstream proxy can still change
+headers after Flask returns the response.
 
 The `make lint`, `make test`, and `make build` aliases run the same local
 baseline or unit tests while this sample has no narrower installed gates.
-GitHub Actions installs `requirements.txt`, verifies dependency consistency,
+The test suite also starts an ephemeral loopback-only Werkzeug server and
+verifies the rendered root plus every managed security header over live HTTP.
+GitHub Actions installs `requirements.lock` with `--require-hashes`, verifies dependency consistency,
 and runs `make check` on Python 3.10, 3.12, and 3.14 for pull requests and
 pushes. The runtime requirement stays within Flask 3.1 (`>=3.1.3,<3.2`) so the
 sample receives current security fixes without silently crossing a future
 feature-series boundary. The workflow uses read-only repository permissions and
 does not persist checkout credentials.
+
+Hosted installs use `requirements.lock` to freeze and hash-verify the reviewed
+Flask graph across the matrix. It preserves the public Flask range and the
+seven exact cross-platform pins in `constraints.txt`, plus conditional
+`colorama` metadata for Windows portability.
+Hosted installation bootstraps exact `pip 26.1.2` before applying those files,
+avoiding a floating installer input across the Python matrix.
+`requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -108,8 +140,12 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Debug mode is local-only. Do not expose the Werkzeug debugger on a public
   interface.
 - `FLASK_DEBUG` should only enable debug mode for loopback host bindings.
+- Imported WSGI applications remain non-debug even when `FLASK_DEBUG` is set;
+  use the guarded local entry point for development debugging.
 - Keep Flask `TRUSTED_HOSTS` aligned with validated bind hosts, and do not trust
   wildcard addresses as request Host values.
+- Do not enable forwarded-host middleware without an explicit trusted-proxy
+  deployment boundary; direct `Host` validation is authoritative by default.
 - Keep response headers such as `X-Content-Type-Options` and `Referrer-Policy`
   in place when adding routes.
 - Keep `X-Frame-Options: DENY` in place unless a documented embedding use case
@@ -118,6 +154,10 @@ When the required SDK or runtime is unavailable, use static checks and source re
   or routes, and add narrow CSP directives alongside any deliberate assets.
 - Keep the `Permissions-Policy` header in place unless a documented browser
   capability is intentionally added.
+- Keep the embedder, opener, and resource policies on both route and error
+  responses unless a documented cross-origin integration requires a change.
+- Keep the shared response hook authoritative for every managed security header
+  rather than preserving weaker route- or extension-provided values.
 
 ## Maintenance Notes
 
@@ -143,6 +183,12 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Content-Security-Policy header guard.
 - See `docs/plans/2026-06-09-permissions-policy-header.md` for the browser
   capability policy guard.
+- See `docs/plans/2026-06-13-cross-origin-isolation-headers.md` for same-origin
+  opener/resource policy and error-response coverage.
+- See `docs/plans/2026-06-13-authoritative-security-header-enforcement.md` for
+  managed-header precedence coverage.
+- See `docs/plans/2026-06-13-complete-cross-origin-isolation.md` for the
+  completed embedder, opener, and resource policy boundary.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
 - Run `make check` before pushing Flask route or configuration changes.
 

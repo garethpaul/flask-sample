@@ -1,14 +1,29 @@
+import os
+import subprocess
+import sys
+import threading
 import unittest
+from http.client import HTTPConnection
 from importlib.metadata import version
+from pathlib import Path
+
+from werkzeug.serving import WSGIRequestHandler, make_server
 
 from app import (
+    BASIC_SECURITY_HEADERS,
     app,
     debug_allowed_for_host,
     debug_enabled,
     host_name,
     port_number,
+    set_basic_security_headers,
     trusted_hosts,
 )
+
+
+class SilentRequestHandler(WSGIRequestHandler):
+    def log_request(self, code="-", size="-"):
+        pass
 
 
 class FlaskSampleTests(unittest.TestCase):
@@ -26,6 +41,19 @@ class FlaskSampleTests(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertIn(b"Hello", response.data)
+
+    def test_url_map_excludes_unused_static_endpoint(self):
+        endpoints = {rule.endpoint for rule in app.url_map.iter_rules()}
+
+        self.assertIn("hello", endpoints)
+        self.assertNotIn("static", endpoints)
+
+    def test_static_path_is_hardened_not_found_response(self):
+        response = self.client.get("/static/app.js")
+
+        self.assertEqual(404, response.status_code)
+        for header, expected_value in BASIC_SECURITY_HEADERS.items():
+            self.assertEqual(expected_value, response.headers.get(header))
 
     def test_root_get_sets_basic_security_headers(self):
         response = self.client.get("/")
@@ -46,6 +74,141 @@ class FlaskSampleTests(unittest.TestCase):
             "geolocation=(), microphone=(), camera=()",
             response.headers.get("Permissions-Policy"),
         )
+        self.assertEqual(
+            "require-corp",
+            response.headers.get("Cross-Origin-Embedder-Policy"),
+        )
+        self.assertEqual(
+            "same-origin",
+            response.headers.get("Cross-Origin-Opener-Policy"),
+        )
+        self.assertEqual(
+            "same-origin",
+            response.headers.get("Cross-Origin-Resource-Policy"),
+        )
+
+    def test_live_http_root_sets_every_managed_security_header(self):
+        server = make_server(
+            "127.0.0.1",
+            0,
+            app,
+            request_handler=SilentRequestHandler,
+        )
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.start()
+
+        try:
+            client = HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+            try:
+                client.request("GET", "/")
+                response = client.getresponse()
+                self.assertEqual(200, response.status)
+                self.assertIn(b"Hello", response.read())
+                for header, expected_value in BASIC_SECURITY_HEADERS.items():
+                    self.assertEqual(expected_value, response.headers.get(header))
+            finally:
+                client.close()
+        finally:
+            server.shutdown()
+            server_thread.join(timeout=2)
+            server.server_close()
+
+        self.assertFalse(server_thread.is_alive())
+
+    def test_live_http_static_path_is_hardened_not_found_response(self):
+        server = make_server(
+            "127.0.0.1",
+            0,
+            app,
+            request_handler=SilentRequestHandler,
+        )
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.start()
+
+        try:
+            client = HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+            try:
+                client.request("GET", "/static/app.js")
+                response = client.getresponse()
+                self.assertEqual(404, response.status)
+                response.read()
+                for header, expected_value in BASIC_SECURITY_HEADERS.items():
+                    self.assertEqual(expected_value, response.headers.get(header))
+            finally:
+                client.close()
+        finally:
+            server.shutdown()
+            server_thread.join(timeout=2)
+            server.server_close()
+
+        self.assertFalse(server_thread.is_alive())
+
+    def test_live_http_validates_host_and_ignores_forwarded_host(self):
+        server = make_server(
+            "127.0.0.1",
+            0,
+            app,
+            request_handler=SilentRequestHandler,
+        )
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.start()
+
+        try:
+            client = HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+            try:
+                client.putrequest("GET", "/", skip_host=True)
+                client.putheader("Host", "attacker.example")
+                client.putheader("X-Forwarded-Host", "127.0.0.1")
+                client.endheaders()
+                response = client.getresponse()
+                self.assertEqual(400, response.status)
+                response.read()
+                for header, expected_value in BASIC_SECURITY_HEADERS.items():
+                    self.assertEqual(expected_value, response.headers.get(header))
+            finally:
+                client.close()
+
+            client = HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+            try:
+                client.putrequest("GET", "/", skip_host=True)
+                client.putheader("Host", "127.0.0.1")
+                client.putheader("X-Forwarded-Host", "attacker.example")
+                client.endheaders()
+                response = client.getresponse()
+                self.assertEqual(200, response.status)
+                response.read()
+            finally:
+                client.close()
+        finally:
+            server.shutdown()
+            server_thread.join(timeout=2)
+            server.server_close()
+
+        self.assertFalse(server_thread.is_alive())
+
+    def test_security_header_hook_overrides_weaker_existing_values(self):
+        response = app.response_class("Hello")
+        for header in BASIC_SECURITY_HEADERS:
+            response.headers[header] = "unsafe"
+
+        hardened_response = set_basic_security_headers(response)
+
+        self.assertIs(response, hardened_response)
+        for header, expected_value in BASIC_SECURITY_HEADERS.items():
+            self.assertEqual(expected_value, response.headers.get(header))
+
+    def test_security_headers_cover_error_responses(self):
+        responses = (
+            (400, self.client.get("/", base_url="http://attacker.example")),
+            (404, self.client.get("/missing")),
+            (405, self.client.post("/")),
+        )
+
+        for expected_status, response in responses:
+            with self.subTest(status=expected_status):
+                self.assertEqual(expected_status, response.status_code)
+                for header, expected_value in BASIC_SECURITY_HEADERS.items():
+                    self.assertEqual(expected_value, response.headers.get(header))
 
     def test_root_get_sets_content_security_policy(self):
         response = self.client.get("/")
@@ -112,6 +275,25 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertFalse(debug_allowed_for_host("0.0.0.0", "1"))
         self.assertFalse(debug_allowed_for_host("example.com", "1"))
         self.assertFalse(debug_allowed_for_host("127.0.0.1", "0"))
+
+    def test_wsgi_import_never_enables_debug_mode(self):
+        environment = os.environ.copy()
+        environment.update(
+            {
+                "FLASK_DEBUG": "1",
+                "FLASK_RUN_HOST": "127.0.0.1",
+            }
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", "from app import app; print(app.debug)"],
+            cwd=Path(__file__).resolve().parents[1],
+            env=environment,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+        self.assertEqual("False", result.stdout.strip())
 
     def test_invalid_port_values_fall_back_to_default(self):
         self.assertEqual(5000, port_number(""))

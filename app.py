@@ -3,14 +3,16 @@ import os
 import re
 from flask import Flask, render_template
 
-app = Flask(__name__)
-app.static_dir = os.path.join(os.getcwd(), "static")
+app = Flask(__name__, static_folder=None)
 
 BASIC_SECURITY_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'none'; object-src 'none'; base-uri 'none'; "
         "form-action 'self'; frame-ancestors 'none'"
     ),
+    "Cross-Origin-Embedder-Policy": "require-corp",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Resource-Policy": "same-origin",
     "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
@@ -93,13 +95,13 @@ def trusted_hosts(value=None):
 
 
 app.config["TRUSTED_HOSTS"] = trusted_hosts()
-app.debug = debug_allowed_for_host(host_name())
+app.debug = False
 
 
 @app.after_request
 def set_basic_security_headers(response):
     for header, value in BASIC_SECURITY_HEADERS.items():
-        response.headers.setdefault(header, value)
+        response.headers[header] = value
     return response
 
 

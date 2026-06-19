@@ -6,6 +6,10 @@ The supported security scope for `flask-sample` is the current default branch, `
 
 Project summary: Flask sample
 
+The sample disables Flask's unused default static endpoint. The maintenance
+gate verifies that `/static/...` is absent from the URL map and returns a
+security-header-protected `404` through both test-client and live HTTP paths.
+
 ## Reporting a Vulnerability
 
 Please report suspected vulnerabilities through GitHub's private vulnerability reporting or by opening a draft GitHub Security Advisory for `garethpaul/flask-sample` when that option is available. If GitHub does not show a private reporting option for this repository, contact the repository owner through GitHub and avoid posting exploit details publicly until the issue can be assessed.
@@ -30,6 +34,8 @@ Helpful reports include:
   not exposed on public host bindings.
 - `FLASK_DEBUG` values should be trimmed and case-normalized before checking
   the opt-in allowlist.
+- Imported WSGI applications keep debug mode off regardless of ambient
+  `FLASK_DEBUG`; only the guarded local development entry point may enable it.
 - Response headers should keep explicit object, base URL, form-action, and
   frame-ancestor Content-Security-Policy boundaries unless a documented need
   changes them.
@@ -40,13 +46,22 @@ Helpful reports include:
 - Flask `TRUSTED_HOSTS` should reject unexpected request Host headers and must
   not treat wildcard bind addresses as trusted hostnames. See Flask's official
   guidance: https://flask.palletsprojects.com/en/stable/web-security/#host-header-validation
+- The sample intentionally ignores `X-Forwarded-Host`; deployments that add
+  proxy middleware must trust only a known proxy hop before honoring it.
 - Response headers should keep unused browser capabilities disabled with
   `Permissions-Policy` unless a documented feature needs them.
+- Embedder, opener, and resource policies should remain `require-corp`,
+  `same-origin`, and `same-origin` on successful and error responses. Any
+  cross-origin asset or browser communication requires a compatibility review.
+- The shared `after_request` hook should replace weaker preexisting values for
+  every managed security header. Deployment proxies must preserve those values
+  after Flask returns the response.
 - GitHub Actions uses read-only repository permissions and runs the same
   `make check` baseline as local development without persisting checkout
   credentials; do not add secrets or deployment steps without a separate
   security review.
-- Dependency manifest detected: `requirements.txt`. Review dependency range
+- Dependency manifests detected: `requirements.txt`, `constraints.txt`, and `requirements.lock`.
+  Review dependency range
   changes deliberately and keep hosted compatibility checks green.
 - The supported framework line is Flask `>=3.1.3,<3.2`; the lower bound keeps
   the 3.1.3 security fix while the upper bound requires deliberate review
@@ -59,6 +74,15 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 ## Dependency and Supply Chain Security
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
+
+GitHub Actions installs `requirements.lock` with `--require-hashes` on Python
+3.10, 3.12, and 3.14 while `requirements.txt` retains the supported Flask 3.1
+range. The lock authenticates accepted artifacts and `constraints.txt` keeps
+the reviewed seven-package cross-platform graph readable.
+`requirements.lock` is the universal hash-verified install graph; pip must consume it with `--require-hashes`.
+The hosted workflow also uses a pinned installer bootstrap. Keep that version
+explicit and review compatibility across the complete Python matrix when it is
+updated.
 
 ## Safe Research Guidelines
 
