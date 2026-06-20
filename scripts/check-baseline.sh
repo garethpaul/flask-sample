@@ -122,10 +122,10 @@ if (
     raise SystemExit("Static-route plan must retain completed verification evidence")
 PY
 
-if ! grep -Fq 'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DIR/Makefile" ||
+if ! grep -Fq 'override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' "$ROOT_DIR/Makefile" ||
   ! grep -Fq '"$(ROOT)/scripts/check-baseline.sh"' "$ROOT_DIR/Makefile" ||
   ! grep -Fq 'cd "$(ROOT)" && $(PYTHON) -m unittest discover -s tests' "$ROOT_DIR/Makefile"; then
-  printf '%s\n' "Makefile verification must resolve checker and test execution from the loaded Makefile." >&2
+  printf '%s\n' "Makefile verification must protect checker and test execution at the loaded Makefile root." >&2
   exit 1
 fi
 
