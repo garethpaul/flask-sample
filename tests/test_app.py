@@ -11,6 +11,7 @@ from werkzeug.serving import WSGIRequestHandler, make_server
 
 from app import (
     BASIC_SECURITY_HEADERS,
+    LOOPBACK_TRUSTED_HOSTS,
     app,
     debug_allowed_for_host,
     debug_enabled,
@@ -313,6 +314,32 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertEqual("127.0.0.1", host_name("local/host"))
         self.assertEqual("localhost", host_name("localhost"))
         self.assertEqual("::1", host_name("::1"))
+
+    def test_control_characters_in_labels_fall_back_to_localhost(self):
+        # Python's $ also matches immediately before a trailing newline, so a
+        # label ending in \n satisfied the old ^...$ anchors. .strip() only
+        # trims the ends of the whole value, so an interior newline survived into
+        # the returned host. None of the fixtures above can catch that: each
+        # fails on a character the label class rejects outright.
+        for value in (
+            "evil\n.example.com",
+            "example\n.com",
+            "example.com\n.evil",
+            "evil\r.example.com",
+            "evil\t.example.com",
+            "ev\nil",
+        ):
+            self.assertEqual("127.0.0.1", host_name(value), repr(value))
+
+    def test_control_characters_never_reach_trusted_hosts(self):
+        self.assertEqual(
+            list(LOOPBACK_TRUSTED_HOSTS), trusted_hosts("evil\n.example.com")
+        )
+
+    def test_valid_hosts_still_resolve(self):
+        self.assertEqual("example.com", host_name("example.com"))
+        self.assertEqual("sub.example.com", host_name("sub.example.com"))
+        self.assertEqual("my-host.example.com", host_name("my-host.example.com"))
 
 
 if __name__ == "__main__":

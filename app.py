@@ -19,7 +19,13 @@ BASIC_SECURITY_HEADERS = {
     "Referrer-Policy": "no-referrer",
 }
 
-HOST_LABEL = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$")
+# Anchor with \A and \Z, not ^ and $. Python's $ also matches immediately before
+# a trailing newline, so a label ending in \n satisfied ^...$ and a host with an
+# embedded newline was accepted instead of falling back to the default. The
+# surrounding .strip() only removes newlines at the ends of the whole value, not
+# inside it: "evil\n.example.com" splits into the labels ["evil\n", "example",
+# "com"], and "evil\n" matched.
+HOST_LABEL = re.compile(r"\A[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\Z")
 LOOPBACK_TRUSTED_HOSTS = ("localhost", "127.0.0.1", "[::1]")
 WILDCARD_BIND_HOSTS = ("0.0.0.0", "::")
 
