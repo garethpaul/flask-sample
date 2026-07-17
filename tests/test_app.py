@@ -302,6 +302,14 @@ class FlaskSampleTests(unittest.TestCase):
         self.assertEqual(5000, port_number("70000"))
         self.assertEqual(8080, port_number("8080"))
 
+    def test_port_boundary_values_are_enforced_exactly(self):
+        # `70000` above only rejects widening past itself; these literal edges pin
+        # the accepted range to exactly 1-65535 in both directions.
+        self.assertEqual(1, port_number("1"))
+        self.assertEqual(65535, port_number("65535"))
+        self.assertEqual(5000, port_number("0"))
+        self.assertEqual(5000, port_number("65536"))
+
     def test_blank_host_values_fall_back_to_localhost(self):
         self.assertEqual("127.0.0.1", host_name(""))
         self.assertEqual("127.0.0.1", host_name("   "))
