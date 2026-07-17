@@ -44,5 +44,8 @@ jobs:
       - name: Verify dependency consistency
         run: python -m pip check
 
+      - name: Run tests
+        run: make test
+
       - name: Run baseline
         run: make check

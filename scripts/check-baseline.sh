@@ -29,6 +29,7 @@ LIVE_HTTP_SECURITY_PLAN="$ROOT_DIR/docs/plans/2026-06-15-live-http-security-head
 HASH_LOCK_PLAN="$ROOT_DIR/docs/plans/2026-06-16-hash-verified-dependency-lock.md"
 STATIC_ROUTE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-disable-unused-static-route.md"
 LIVE_HTTP_SECURITY_CHECK="$ROOT_DIR/scripts/check-live-http-security.py"
+CHECKER_SELF="$ROOT_DIR/scripts/check-baseline.sh"
 PYTHON=${PYTHON:-python3}
 
 require_file() {
@@ -54,6 +55,7 @@ for path in \
   "templates/hello.html" \
   "tests/test_app.py" \
   "scripts/check-live-http-security.py" \
+  "scripts/check-baseline.sh" \
   "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-09-content-security-policy-header.md" \
   "docs/plans/2026-06-10-content-security-policy-boundaries.md" \
@@ -128,6 +130,49 @@ if ! grep -Fq 'override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))' 
   printf '%s\n' "Makefile verification must protect checker and test execution at the loaded Makefile root." >&2
   exit 1
 fi
+
+# Substring pins above cannot see a suppressed exit status: `... discover -s tests`
+# is a prefix of `... discover -s tests -p "test*.py" || true`, so the recipe can
+# keep running the suite while discarding its verdict. Pin the executing lines as
+# exact whole lines instead, and require the workflow to run the suite in its own
+# step so a suppressed verdict inside this checker cannot produce a green CI run.
+"$PYTHON" - "$ROOT_DIR/Makefile" "$CHECKER_SELF" "$CI_WORKFLOW" <<'PY'
+import sys
+from pathlib import Path
+
+makefile, checker, workflow = (
+    Path(path).read_text(encoding="utf-8").splitlines() for path in sys.argv[1:4]
+)
+
+test_recipe = '\t@cd "$(ROOT)" && $(PYTHON) -m unittest discover -s tests -p "test*.py"'
+checker_run = '(cd "$ROOT_DIR" && "$PYTHON" -m unittest discover -s tests -p "test*.py")'
+ci_test_run = "        run: make test"
+
+if makefile.count(test_recipe) != 1:
+    raise SystemExit(
+        "Makefile must run the unittest suite as exactly this unconditional recipe line: "
+        + test_recipe.strip()
+    )
+if checker.count(checker_run) != 1:
+    raise SystemExit(
+        "Baseline checker must execute the unittest suite as exactly this unconditional "
+        "line so a failing suite fails this checker: " + checker_run
+    )
+if ci_test_run not in workflow:
+    raise SystemExit(
+        "GitHub Actions must run `make test` directly as its own step, out of band from "
+        "`make check`, so a suppressed verdict inside the checker still fails CI."
+    )
+if "      - name: Run tests\n        run: make test\n" not in "\n".join(workflow) + "\n":
+    raise SystemExit("GitHub Actions `Run tests` step must invoke `make test` directly.")
+# `continue-on-error` discards a step's verdict exactly like `|| true` discards a
+# command's, which would make the out-of-band observer above decorative.
+if any(line.strip().startswith("continue-on-error") for line in workflow):
+    raise SystemExit(
+        "GitHub Actions must not suppress step failures with `continue-on-error`; "
+        "the check and test steps must fail the job."
+    )
+PY
 
 if ! grep -Fq "status: completed" "$LOCATION_INDEPENDENT_MAKE_PLAN" ||
   ! grep -Fq "from /tmp" "$LOCATION_INDEPENDENT_MAKE_PLAN" ||
@@ -325,8 +370,11 @@ if ! grep -Fq "def port_number" "$ROOT_DIR/app.py" ||
 fi
 
 if ! grep -Fq "test_invalid_port_values_fall_back_to_default" "$ROOT_DIR/tests/test_app.py" ||
-  ! grep -Fq "70000" "$ROOT_DIR/tests/test_app.py"; then
-  printf '%s\n' "Tests must cover invalid and out-of-range PORT values." >&2
+  ! grep -Fq "70000" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq "test_port_boundary_values_are_enforced_exactly" "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq 'self.assertEqual(65535, port_number("65535"))' "$ROOT_DIR/tests/test_app.py" ||
+  ! grep -Fq 'self.assertEqual(5000, port_number("65536"))' "$ROOT_DIR/tests/test_app.py"; then
+  printf '%s\n' "Tests must cover invalid, boundary, and out-of-range PORT values." >&2
   exit 1
 fi
 

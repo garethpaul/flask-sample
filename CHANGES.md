@@ -1,5 +1,15 @@
 # Changes
 
+## 2026-07-17
+
+- Made a failing test suite unable to report a passing gate: CI now runs
+  `make test` as its own step, out of band from `make check`, and the
+  Makefile recipe, baseline checker, and CI step that execute the suite are
+  pinned as exact whole lines rather than as substrings that a suppressed
+  exit status could satisfy.
+- Pinned the accepted `PORT` range with literal boundary fixtures so neither
+  widening nor narrowing the `1-65535` bounds can pass unnoticed.
+
 ## 2026-06-19
 
 - Prevented ambient `FLASK_DEBUG` from enabling debug state when a production
